@@ -22,10 +22,13 @@ SYSCTL_SRC="${ROOT}/host/sysctl.d/60-mentorpi-t1-dds.conf"
 DESKTOP_LAUNCHER_SRC="${ROOT}/host/desktop/mentorpi-rviz"
 DESKTOP_ENTRY_SRC="${ROOT}/host/desktop/mentorpi-rviz.desktop"
 
-PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
-
 if ! command -v sshpass >/dev/null 2>&1; then
-  echo "error: sshpass is required (expected /opt/homebrew/bin/sshpass)" >&2
+  echo "error: sshpass is required (install: sudo apt install sshpass)" >&2
+  exit 1
+fi
+
+if ! command -v file >/dev/null 2>&1; then
+  echo "error: file is required (install: sudo apt install file)" >&2
   exit 1
 fi
 
@@ -39,18 +42,14 @@ if [[ ! -x "${T1CTL_BIN}" ]]; then
 fi
 
 FILE_DESC="$(file "${T1CTL_BIN}")"
-if echo "${FILE_DESC}" | grep -q 'Mach-O'; then
-  echo "error: refusing to install Mach-O t1ctl on Pi: ${FILE_DESC}" >&2
-  exit 1
-fi
 if ! echo "${FILE_DESC}" | grep -Eq 'ARM aarch64|aarch64'; then
   echo "error: t1ctl is not linux aarch64: ${FILE_DESC}" >&2
   exit 1
 fi
 
 export SSHPASS="${PI_PASSWORD}"
-# Cursor/macOS often has DISPLAY + ssh-agent keys; without these, later ssh
-# calls hit askpass or "Too many authentication failures" after rsync.
+# A desktop session often has DISPLAY + ssh-agent keys; without clearing them,
+# later ssh calls hit askpass or "Too many authentication failures" after rsync.
 export SSH_ASKPASS_REQUIRE=never
 SSH_CONTROL_DIR="${TMPDIR:-/tmp}/mentorpi-t1-ssh.$$"
 mkdir -p "${SSH_CONTROL_DIR}"

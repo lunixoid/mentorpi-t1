@@ -1,18 +1,17 @@
 # SD026 I2 / SD028 I3: parameters for person_detect_pi.
 /**:
   ros__parameters:
-    enabled: false
+    enabled: true
     image_topic: /aurora/rgb/image_raw
-    detections_topic: /perception/detections_2d_onboard
+    detections_topic: /perception/detections_2d
     weights: models/yolo11n.ncnn.param
     confidence_threshold: 0.25
     num_threads: 2
     # SD030: 250 ms infer was bench-tested on Pi and rolled back — node could not sustain 10 Hz bbox
     # republish (3.2 Hz), cores 85–92 %, bbox age grew; 400 ms gave no age win for +10 % CPU. Not an SLA.
     infer_period_ms: 500
-    # SD028 I3: ByteTrack. Pi differs from Mac bytetrack.yaml:
-    # fuse_score: false — score 0.4–0.6 on a partial silhouette broke matching;
-    # track_buffer_s: 3.0 — Mac 30 frames at ~10 Hz. Not an SLA.
+    # SD028 I3: ByteTrack. fuse_score: false — score 0.4–0.6 on a partial silhouette broke matching;
+    # track_buffer_s: 3.0 — ~10 Hz republish horizon. Not an SLA.
     track_high_thresh: 0.25
     track_low_thresh: 0.1
     new_track_thresh: 0.25

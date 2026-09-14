@@ -1,7 +1,6 @@
 # Overlay layer on the image MentorPi was created from (not ros:humble from Docker Hub).
 # pyserial lives in MentorPi's RW layer, not in the stock image; ros_robot_controller
-# imports serial and dies without it. foxglove_bridge is not in the stock image either;
-# mentorpi_bringup launches it for SD005 viewer. Vendor imu_filter.launch.py needs
+# imports serial and dies without it. Vendor imu_filter.launch.py needs
 # complementary_filter_node; the base image has no imu_complementary_filter — apt
 # ros-humble-imu-complementary-filter (not a CCNY source build, not the imu-tools
 # metapackage which pulls rviz). Install into the overlay image so SIT survives recreate.
@@ -35,7 +34,6 @@ RUN find /etc/apt \( -name '*.list' -o -name 'sources.list' \) -print0 \
     fi \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        ros-humble-foxglove-bridge \
         ros-humble-cv-bridge \
         ros-humble-vision-msgs \
         ros-humble-imu-complementary-filter \

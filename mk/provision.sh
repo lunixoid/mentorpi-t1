@@ -21,10 +21,8 @@ DOCKERFILE_DIR="${ROOT}/docker/mentorpi-t1"
 # Rebuild image mentorpi-t1 even if the tag already exists (default: skip).
 FORCE_REBUILD="${FORCE_REBUILD:-0}"
 
-PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
-
 if ! command -v sshpass >/dev/null 2>&1; then
-  echo "error: sshpass is required (expected /opt/homebrew/bin/sshpass)" >&2
+  echo "error: sshpass is required (install: sudo apt install sshpass)" >&2
   exit 1
 fi
 

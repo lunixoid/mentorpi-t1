@@ -9,7 +9,6 @@ Hiwonder MentorPi T1 — гусеничный робот на Raspberry Pi 5. С
 - `src/` — ROS-пакеты: режимы движения, слежение за человеком, работа с датчиками, мост на вендорское шасси;
 - `host/t1ctl/` — утилита оператора `t1ctl`: статус робота, переключение стеков и режимов, калибровка датчиков;
 - `host/systemd/`, `host/sudoers.d/`, `host/sysctl.d/` — автозапуск и настройки хоста Raspberry Pi;
-- `host/mac_person_detect/` — распознавание человека на Mac;
 - `Makefile`, `mk/`, `docker/` — сборка под arm64 и выкладка на робота.
 
 Переключение стеков:
@@ -27,8 +26,8 @@ Hiwonder MentorPi T1 — гусеничный робот на Raspberry Pi 5. С
 
 - Ехать по стику USB-пульта — режим **manual**.
 - Следовать за человеком — режим **follow**: подъезжает и останавливается примерно в 0.5 м. Скорость тем выше, чем дальше человек, но не больше 0.25 м/с; разгон и торможение плавные.
-- Распознавать человека на Mac (по умолчанию, на Mac должен быть запущен `make mac-detect`) или на самом роботе (`t1ctl detect offline`) — см. [Слежение за человеком](#слежение-за-человеком).
-- Показывать датчики на 3D-сцене rviz по VNC (ярлык «MentorPi rviz» на столе Pi); запасной просмотр с Mac — Foxglove через `t1ctl debug on`.
+- Распознавать человека на борту робота — нода `person_detect_pi` поднимается вместе со стеком, см. [Слежение за человеком](#слежение-за-человеком).
+- Показывать датчики на 3D-сцене rviz по VNC (ярлык «MentorPi rviz» на столе Pi).
 - Хранить и применять калибровку креплений датчиков.
 
 Чего пока нет:
@@ -61,7 +60,7 @@ odometry          active
 platform model    active
 calibration       file        # применены калибровки из файла
 dds buffers       active
-version           1.8.0
+version           2.0.0
 ```
 
 Дальше:
@@ -100,19 +99,17 @@ t1ctl start            # включить demo
 t1ctl restart          # перезапустить demo (нужен после calib save)
 t1ctl stock            # вернуть штатный автозапуск Hiwonder
 
-t1ctl mode manual      # ручное управление с пульта
-t1ctl mode allow       # слежение за человеком
 t1ctl mode forbid      # запретить движение
+t1ctl mode allow       # слежение за человеком
+t1ctl mode manual      # ручное управление с пульта
 
-t1ctl detect mac       # детекции человека приходят с Mac (по умолчанию)
-t1ctl detect offline   # детекции считает сам робот
-t1ctl debug on         # overlay с рамками людей и мост Foxglove (порт 8765)
-t1ctl debug off        # выключить overlay и мост
 t1ctl calib            # калибровка датчиков, см. отдельный раздел
 
 t1ctl --help
 t1ctl --version
 ```
+
+Подкоманды `calib`: `status`, `corner`, `drive`, `side`, `lidar`, `camera`, `accept`, `reject`, `save`, `abort` (подробнее в разделе [Калибровка датчиков](#калибровка-датчиков)).
 
 Поля статуса:
 
@@ -127,7 +124,7 @@ t1ctl --version
 | `platform model` | `active` / `degraded` / `inactive` | загружена модель робота (URDF) |
 | `calibration` | `file` / `factory` / `unused` | откуда взяты позы датчиков: из файла, из модели, либо файл есть, но не применился |
 | `dds buffers` | `active` / `degraded` | хватает ли сетевых буферов под поток с камеры |
-| `version` | например `1.8.0` | версия `t1ctl` |
+| `version` | например `2.0.0` | версия `t1ctl` |
 
 ## Как устроен стек
 
@@ -166,7 +163,7 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 | `src/motion_control` | закон слежения за человеком → `/pnc/desired_twist` |
 | `src/mission_control` | статус слежения (`FOLLOWING` / `HOLD` / `INACTIVE`), скорость не считает |
 | `src/mentorpi_perception` | детекции + облако точек → положение ближайшего человека |
-| `src/mentorpi_person_detect` | распознавание человека на самом роботе (YOLO11n, по умолчанию выключено) |
+| `src/mentorpi_person_detect` | распознавание человека на роботе (YOLO11n, включено по умолчанию) |
 | `src/mentorpi_localization` | ориентация по IMU → `/imu_odom` |
 | `src/mentorpi_description` | модель робота (URDF/xacro) |
 | `src/mentorpi_calibration` | файл калибровки и утилита `calib` |
@@ -174,7 +171,6 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 | `src/mentorpi_stubs` | заглушка `/control/motion_restriction` вместо будущей защиты от столкновений |
 | `src/hiwonder_controller`, `src/ros_robot_controller` | вендорские драйверы шасси: кинематика гусениц, одометрия, обмен по UART |
 | `host/t1ctl` | CLI оператора (C++17, без ROS) |
-| `host/mac_person_detect` | распознавание человека на Mac |
 | `host/systemd`, `host/sudoers.d`, `host/sysctl.d` | автозапуск и настройки хоста Pi |
 | `Makefile`, `mk/`, `docker/` | сборка под arm64, выкладка на Pi, первичная настройка |
 
@@ -199,58 +195,24 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 
 Как это работает по шагам:
 
-1. Источник детекций распознаёт человека на RGB-картинке камеры и публикует рамки в `/perception/detections_2d`.
+1. Нода `person_detect_pi` распознаёт человека на RGB-картинке камеры и публикует рамки в `/perception/detections_2d` (YOLO11n на Pi, примерно 2 кадра в секунду).
 2. `mentorpi_perception` берёт рамку, сопоставляет её с облаком точек глубинной камеры и считает, где человек относительно робота. Результат — `/perception/nearest_person`.
 3. `motion_control` по дистанции и направлению считает скорость и публикует `/pnc/desired_twist`.
 4. В режиме follow `control_mux` пропускает эту скорость на шасси.
 
-Распознавать человека может Mac или сам робот:
-
-| Источник | Команда | Комментарий |
-|----------|---------|-------------|
-| Mac (по умолчанию) | `t1ctl detect mac` | на Mac нужно запустить `make mac-detect`; Mac и робот должны быть в одной сети |
-| робот | `t1ctl detect offline` | YOLO11n на Pi, медленнее (примерно 2 кадра в секунду) |
-
-Выбор источника сбрасывается при перезапуске стека: после `t1ctl restart` снова используется Mac.
+Детектор включён по умолчанию и стартует вместе с demo; отдельной команды переключения нет.
 
 Если человека не видно, `mentorpi_perception` какое-то время продолжает предсказывать его положение по последней скорости (режим «coasting»). В это время робот не едет — трогается он только по свежим детекциям.
 
-Подробности про запуск на Mac и про сеть между Mac и роботом — в [host/mac_person_detect/README.md](host/mac_person_detect/README.md).
-
 ## Просмотр с датчиков
 
-### Основной сценарий (VNC)
-
-При обычном demo (`debug off`) смотрите датчики на 3D-сцене rviz по VNC:
+Смотрите датчики на 3D-сцене rviz по VNC:
 
 1. Подключитесь к рабочему столу Pi по VNC.
 2. Убедитесь, что demo активен (`t1ctl status` → `demo active`).
-3. Дважды щёлкните ярлык **MentorPi rviz** на столе — откроется окно с моделью робота, TF, лидаром `/scan` и облаком `/aurora/points2`. Мост Foxglove для этого не нужен.
+3. Дважды щёлкните ярлык **MentorPi rviz** на столе — откроется окно с моделью робота, TF, лидаром `/scan` и облаком `/aurora/points2`.
 
 Если контейнер demo не running, ярлык ничего не откроет — сначала `t1ctl start`. Fixed frame в конфиге — `odom`.
-
-### Запасной сценарий (Foxglove на Mac)
-
-Мост Foxglove **не поднимается вместе со стеком** — после питания или `t1ctl restart` его нет. Включить запасной просмотр с Mac:
-
-```bash
-t1ctl debug on    # overlay с рамками + мост на порту 8765
-t1ctl debug off   # выключить оба; окно rviz с ярлыка не трогает
-```
-
-1. Foxglove Desktop → **Open connection** → **Foxglove WebSocket**.
-2. Адрес: `ws://192.168.88.56:8765` (Ethernet) или `ws://192.168.149.1:8765` (Wi-Fi). URL также печатает `t1ctl debug`, когда мост включён.
-
-Мост работает только на чтение: из Foxglove нельзя ни публиковать топики, ни вызывать сервисы, то есть подвинуть робота оттуда не получится.
-
-Настройки панели 3D в Foxglove:
-
-| Настройка | Значение |
-|-----------|----------|
-| Fixed frame | `base_footprint` (пол — это z = 0), не `odom` |
-| LaserScan | `/scan` |
-| Point cloud | `/aurora/points2` |
-| Grid | плоскость z = 0 в `base_footprint` |
 
 ## Калибровка датчиков
 
@@ -266,7 +228,7 @@ t1ctl debug off   # выключить оба; окно rviz с ярлыка н�
 2. `accept` оставляет предложение в черновике, `reject` выбрасывает. Делать это надо **после каждого** шага.
 3. `save` записывает черновик в файл, `restart` перезапускает стек.
 
-Позы становятся живыми только после перезапуска: стек читает файл один раз при старте. То есть цепочка всегда такая — **accept → save → restart**. Без `save` и `restart` картинка в Foxglove не изменится.
+Позы становятся живыми только после перезапуска: стек читает файл один раз при старте. То есть цепочка всегда такая — **accept → save → restart**. Без `save` и `restart` картинка в rviz не изменится.
 
 ### Что нужно перед началом
 
@@ -291,7 +253,7 @@ t1ctl calib abort                                       # удалить чер�
 
 Числа пишутся **без единиц**: `0.18`, а не `0.18m` и не `18`. Высота — в метрах, наклон — в градусах. У `calib lidar` обязательны все три флага.
 
-Порога «откалибровано» нет — решает оператор, глядя на картинку в Foxglove.
+Порога «откалибровано» нет — решает оператор, глядя на сцену в rviz по VNC.
 
 Сейчас **не** калибруются: оптические оси камеры и лидара, положение IMU (`x`/`y`/`z`/`yaw` остаются заводскими, `drive` только сверяет знак вращения), внутренние параметры камеры, коэффициенты одометрии.
 
@@ -368,22 +330,18 @@ t1ctl calib side --side left
 
 ### Как понять, что получилось
 
-Откройте Foxglove (см. выше) и смотрите на две вещи:
+Откройте rviz по VNC (см. [Просмотр с датчиков](#просмотр-с-датчиков)) и смотрите на две вещи:
 
 - Стена в облаке точек `/aurora/points2` должна лежать **на лучах** `/scan`, а не отдельным слоем рядом.
-- Кольцо `/scan` должно быть плоским и висеть над сеткой на высоте лидара (около 18 см), кадр камеры — около 14.5 см.
+- Кольцо `/scan` должно быть плоским и на высоте лидара относительно `base_footprint` (около 18 см).
 
-Так и должно быть, это не ошибки калибровки:
-
-- Сетка «протыкает» корпус или уходит в потолок — это просто плоскость z = 0 системы координат `base_footprint`.
-- Кадр `depth_camera_link` выглядит «заваленным» — так устроена оптическая система координат, перпендикуляр к полу по ней проверять нельзя.
-- Картинка с камеры висит вогнутой сферой позади облака — это особенность оверлея Foxglove (нет `/aurora/depth/camera_info`), а не поза камеры.
+Кадр `depth_camera_link` в TF может выглядеть «заваленным» — так устроена оптическая система координат камеры, перпендикуляр к полу по ней проверять нельзя.
 
 ### Если что-то пошло не так
 
 | Симптом | Что делать |
 |---------|------------|
-| После `accept` в Foxglove ничего не изменилось | Не было `save` или `restart`. Цепочка: accept → save → restart |
+| После `accept` в rviz ничего не изменилось | Не было `save` или `restart`. Цепочка: accept → save → restart |
 | В статусе `calibration unused` | Файл есть, но не применился. Причину смотрите в `reason` у `t1ctl calib` |
 | `error: calib … failed`, стек лежит | `t1ctl start`; файл калибровки при этом не портится |
 | `one wall` / `walls not orthogonal` | Робот стоит не перед настоящим прямым углом — переставить и повторить `corner` |
@@ -396,7 +354,23 @@ t1ctl calib side --side left
 
 ## Сборка и выкладка
 
-Собирать надо на машине разработки, **не на Pi**. Нужны Docker (с поддержкой `linux/arm64`) и `sshpass`.
+Собирать надо на машине разработки с **Linux x86_64** (Ubuntu 22.04) и **Docker Engine**, **не на Pi**.
+
+Зависимости хоста (один раз):
+
+```bash
+sudo apt install -y sshpass file qemu-user-static binfmt-support cmake python3-pip
+python3 -m pip install --user pre-commit
+```
+
+`pre-commit` ставится через pip: apt-пакет Ubuntu 22.04 (2.17) не читает манифест хука clang-format из `.pre-commit-config.yaml`. Команда попадает в `~/.local/bin`; если её нет в `PATH`, перелогиньтесь.
+
+Без зарегистрированного qemu для arm64 `make build` откажет до запуска Docker:
+
+```
+error: docker cannot run linux/arm64 (no qemu-aarch64 binfmt on this host)
+install: sudo apt install qemu-user-static binfmt-support
+```
 
 Первый раз — в таком порядке:
 
@@ -408,14 +382,30 @@ make provision   # первичная настройка Pi: образ, кон�
 
 При изменениях кода достаточно `make build && make deploy`.
 
-`make` без цели печатает список целей и ничего не собирает.
+`make` без цели печатает список целей и ничего не собирает:
 
-Что делает каждая цель:
+```
+Targets:
+  help              this list (default; no docker/colcon)
+  env               builder images (overlay + t1ctl)
+  env-overlay       image mentorpi-overlay-builder:arm64
+  env-t1ctl         image mentorpi-t1ctl-builder:arm64
+  build             overlay + t1ctl (linux/arm64) into build-arm64/
+  overlay           ROS overlay only
+  t1ctl             t1ctl only
+  deploy            copy overlay + t1ctl to Pi; restart mentorpi-t1
+  provision         Pi image/container + our unit (not docker rm MentorPi)
+  clean             remove build-arm64/ (not docker images)
+  env-clean         remove builder image tags
 
-- **`make build`** — собирает overlay (пакеты из `src/`) и `t1ctl` под `linux/arm64` в `build-arm64/`. Отдельно: `make overlay`, `make t1ctl`. Сборочные образы создаются целью `make env` и переиспользуются, так что повторная сборка не ходит в apt. `t1ctl`, собранный на Mac обычным cmake, — другой бинарник, на Pi его копировать нельзя (`make deploy` это проверяет и откажется).
+Env: PI_HOST PI_PASSWORD PI_STAGING CONTAINER FORCE_REBUILD HTTP_PROXY HTTPS_PROXY
+```
+
+Кратко по целям:
+
+- **`make build`** — собирает overlay (пакеты из `src/`) и `t1ctl` под `linux/arm64` в `build-arm64/`. Отдельно: `make overlay`, `make t1ctl`. Сборочные образы создаются целью `make env` и переиспользуются; если хост ходит в сеть через прокси, `HTTP_PROXY` и `HTTPS_PROXY` из окружения передаются в `docker build` этих образов. На Pi нельзя ставить `t1ctl`, собранный нативно на машине разработки — только arm64 из `build-arm64/` (`make deploy` проверяет архитектуру и откажется).
 - **`make deploy`** — копирует overlay в `/home/pi/mentorpi_t1_ws/`, ставит `t1ctl` в `/usr/local/bin`, systemd-юнит, sudoers и настройки сети. Если контейнер `mentorpi-t1` уже есть — останавливает стек, подменяет в контейнере каталог `install/` и перезапускает, чтобы ноды взяли новую сборку. Контейнер `MentorPi` не трогает. По умолчанию `PI_HOST=pi@192.168.88.56`, пароль берётся из `PI_PASSWORD`.
 - **`make provision`** — первичная настройка или ремонт стенда. Собирает на Pi образ `mentorpi-t1` поверх вендорского, создаёт контейнер с той же сетью, привязками устройств и каталогом калибровок, включает автозапуск `mentorpi-t1.service` и выключает вендорский `start_node.service`. Вендорский контейнер `MentorPi` не удаляет. Если overlay ещё не выложен, сам вызовет `make deploy`. После смены вендорского образа: `FORCE_REBUILD=1 make provision`.
-- **`make mac-detect`** — запускает распознавание человека на Mac (pixi, без Docker).
 
 ## Локальная сборка для разработки
 
@@ -428,11 +418,12 @@ source install/setup.bash
 ros2 launch mentorpi_bringup stage1.launch.py
 ```
 
-Собрать `t1ctl` для машины разработки (это не тот бинарник, что идёт на Pi):
+Собрать `t1ctl` нативно на машине разработки (это не тот бинарник, что идёт на Pi) и прогнать тесты:
 
 ```bash
-cmake -S host/t1ctl -B host/t1ctl/build
-cmake --build host/t1ctl/build
+cmake -S host/t1ctl -B host/t1ctl/build-host
+cmake --build host/t1ctl/build-host
+ctest --test-dir host/t1ctl/build-host
 ```
 
 ## Проверка кода
@@ -440,8 +431,8 @@ cmake --build host/t1ctl/build
 Проверки локальные, CI нет. Собирать overlay для них не нужно.
 
 ```bash
-pip install pre-commit   # или brew install pre-commit
-pre-commit install       # поставить хук на git commit
+python3 -m pip install --user pre-commit   # не apt: версия 2.17 не подходит
+pre-commit install                         # поставить хук на git commit
 pre-commit run --all-files
 ```
 

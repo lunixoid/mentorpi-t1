@@ -19,7 +19,6 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     rate_hz = LaunchConfiguration("rate_hz")
-    viewer_bridge = LaunchConfiguration("viewer_bridge")
     enable_lidar = LaunchConfiguration("enable_lidar")
     enable_robot_model = LaunchConfiguration("enable_robot_model")
     enable_depth_camera = LaunchConfiguration("enable_depth_camera")
@@ -42,8 +41,7 @@ def generate_launch_description():
     #   F06 control — control_state + control_mux (SD011)
     #   F07 urdf — robot_model_layer.launch.py (SD007 T2)
     #   F08 perception — person_perception + person_detect_pi after camera_layer
-    #       (SD013, SD026). Mac person_detect is not in this launch; onboard
-    #       person_detect_pi is launched with enabled=false (default offline).
+    #       (SD013, SD026, SD034). Onboard person_detect_pi enabled by default.
     #   F09 follow (track)
     #   F10 follow (behavior) — mission_control (SD019)
     #   F11 motion — motion_control (SD020, SD025)
@@ -238,9 +236,8 @@ def generate_launch_description():
         }.items(),
     )
 
-    # SD013 T5 / D9, SD026 D6: F08 on the robot. YAML from package share.
-    # Do not IncludeLaunchDescription Mac person_detect, vendor YOLO,
-    # HailoRT, or vendor bringup.launch.py.
+    # SD013 T5 / D9, SD026 D6, SD034: F08 on the robot. YAML from package share.
+    # Do not IncludeLaunchDescription vendor YOLO, HailoRT, or vendor bringup.launch.py.
     person_perception = Node(
         package="mentorpi_perception",
         executable="person_perception",
@@ -258,7 +255,7 @@ def generate_launch_description():
         ],
     )
 
-    # SD026 T4: onboard YOLO11n NCNN + ByteTrack; default enabled=false.
+    # SD026 T4 / SD034: onboard YOLO11n NCNN + ByteTrack; enabled by default (YAML).
     person_detect_pi = Node(
         package="mentorpi_person_detect",
         executable="person_detect_pi",
@@ -346,9 +343,7 @@ def generate_launch_description():
                 "max_linear_follow": 0.25,
                 "ang_deadband": 0.05,
                 "track_half_sum": 0.1407,
-                "detections_source": "mac",  # t1ctl detect; restart returns Mac
-                "nearest_timeout_ms": 300,  # Mac arrival window, not pose age
-                "nearest_timeout_offline_ms": 1000,  # offline infer stalls ~0.5–0.7 s (SD027)
+                "nearest_timeout_ms": 1000,  # onboard infer stalls ~0.5–0.7 s (SD027)
                 "rate_hz": 20.0,
             }
         ],
@@ -392,22 +387,6 @@ def generate_launch_description():
         }.items(),
     )
 
-    # SD005 T2: read-only Foxglove bridge — separate from motion path.
-    foxglove_bridge_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("mentorpi_bringup"),
-                        "launch",
-                        "foxglove_bridge.launch.py",
-                    ]
-                ),
-            ]
-        ),
-        condition=IfCondition(viewer_bridge),
-    )
-
     # SD029: UDPv4 8 MB socket buffer for camera frames (all stage1 nodes inherit via env).
     bringup_share = get_package_share_directory("mentorpi_bringup")
     fastdds_camera_frames = os.path.join(bringup_share, "config", "fastdds_camera_frames.xml")
@@ -422,11 +401,6 @@ def generate_launch_description():
                 "rate_hz",
                 default_value="10.0",
                 description="stub_graph publish rate in hertz",
-            ),
-            DeclareLaunchArgument(
-                "viewer_bridge",
-                default_value="false",
-                description="start read-only foxglove_bridge for SD005 viewer",
             ),
             DeclareLaunchArgument(
                 "enable_lidar",
@@ -475,6 +449,5 @@ def generate_launch_description():
             command_dispatcher,
             voice_command,
             motion_control,
-            foxglove_bridge_launch,
         ]
     )

@@ -15,9 +15,10 @@ ExecStartPre=-/usr/bin/docker stop -t 1 MentorPi
 ExecStartPre=/usr/bin/docker start mentorpi-t1
 # docker exec as ubuntu in bash. Vendor .hiwonderrc first (vendor SIT pkgs +
 # ROS_DOMAIN_ID: in bash it sources Humble and ros2_ws/install/local_setup.bash).
-# .hiwonderrc sets ROS_LOCALHOST_ONLY=1; overlay must clear it so RGB reaches
-# the Mac on 192.168.88.0/24 (SD013 D7). Deptrum isolated prefix (SD008) if the
-# overlay image has it. Overlay setup.bash last. We left zsh: vendor local_setup
+# .hiwonderrc sets ROS_LOCALHOST_ONLY=1; overlay clears it (ROS_LOCALHOST_ONLY=0):
+# the SD029 FastDDS profile was measured with that networking. Deptrum isolated
+# prefix (SD008) if the overlay image has it. Overlay setup.bash last. We left
+# zsh: vendor local_setup
 # is commented there, and overlay setup.bash breaks under zsh (BASH_SOURCE).
 # exec so the tracked PID is ros2 launch. Not Hiwonder bringup.launch.py.
 ExecStart=/usr/bin/docker exec -u ubuntu -w /home/ubuntu mentorpi-t1 /bin/bash -c "source /home/ubuntu/ros2_ws/.hiwonderrc; export ROS_LOCALHOST_ONLY=0; export MACHINE_TYPE=MentorPi_Tank; export DEPTH_CAMERA_TYPE=aurora; if [ -f /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash ]; then source /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash; fi; source /home/ubuntu/mentorpi_t1_ws/install/setup.bash; exec ros2 launch mentorpi_bringup stage1.launch.py"

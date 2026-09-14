@@ -10,7 +10,6 @@
 #include "calib.hpp"
 #include "ui.hpp"
 #include "units.hpp"
-#include "viewer.hpp"
 
 namespace {
 
@@ -34,14 +33,8 @@ class MockRunner final : public units::ProcessRunner {
   bool container_up = true;
   std::vector<int> probe_codes;
   std::vector<std::string> probe_outs;
-  std::vector<int> viewer_codes;
-  std::vector<std::string> viewer_outs;
   std::vector<int> mode_codes;
   std::vector<std::string> mode_outs;
-  std::vector<int> debug_codes;
-  std::vector<std::string> debug_outs;
-  std::vector<int> detect_codes;
-  std::vector<std::string> detect_outs;
   std::vector<int> calib_codes;
   std::vector<std::string> calib_outs;
   std::vector<int> docker_cp_codes;
@@ -83,22 +76,6 @@ class MockRunner final : public units::ProcessRunner {
     }
     if (args[0] == "docker" && args.size() >= 2 && args[1] == "exec") {
       const char* script = args.back().c_str();
-      const bool viewer_script = std::strstr(script, "T1CTL_BRIDGE=") != nullptr ||
-                                 std::strstr(script, "T1CTL_STARTED=") != nullptr ||
-                                 std::strstr(script, "T1CTL_STOPPED=") != nullptr;
-      if (viewer_script) {
-        const std::size_t i = viewer_used_;
-        ++viewer_used_;
-        if (i < viewer_outs.size()) {
-          if (out != nullptr) {
-            *out = viewer_outs[i];
-          }
-          if (i < viewer_codes.size()) {
-            return viewer_codes[i];
-          }
-          return 0;
-        }
-      }
       const bool mode_script = std::strstr(script, "T1CTL_MODE_OK=") != nullptr;
       if (mode_script) {
         const std::size_t i = mode_used_;
@@ -109,42 +86,6 @@ class MockRunner final : public units::ProcessRunner {
           }
           if (i < mode_codes.size()) {
             return mode_codes[i];
-          }
-          return 0;
-        }
-        if (out != nullptr) {
-          *out = warm_out;
-        }
-        return warm_code;
-      }
-      const bool debug_script = std::strstr(script, "T1CTL_DEBUG_ACTION=") != nullptr;
-      if (debug_script) {
-        const std::size_t i = debug_used_;
-        ++debug_used_;
-        if (i < debug_outs.size()) {
-          if (out != nullptr) {
-            *out = debug_outs[i];
-          }
-          if (i < debug_codes.size()) {
-            return debug_codes[i];
-          }
-          return 0;
-        }
-        if (out != nullptr) {
-          *out = warm_out;
-        }
-        return warm_code;
-      }
-      const bool detect_script = std::strstr(script, "T1CTL_DETECT_ACTION=") != nullptr;
-      if (detect_script) {
-        const std::size_t i = detect_used_;
-        ++detect_used_;
-        if (i < detect_outs.size()) {
-          if (out != nullptr) {
-            *out = detect_outs[i];
-          }
-          if (i < detect_codes.size()) {
-            return detect_codes[i];
           }
           return 0;
         }
@@ -207,19 +148,13 @@ class MockRunner final : public units::ProcessRunner {
   }
 
   std::size_t probe_used() const { return probe_used_; }
-  std::size_t viewer_used() const { return viewer_used_; }
   std::size_t mode_used() const { return mode_used_; }
-  std::size_t debug_used() const { return debug_used_; }
-  std::size_t detect_used() const { return detect_used_; }
   std::size_t calib_used() const { return calib_used_; }
   std::size_t docker_cp_used() const { return docker_cp_used_; }
 
  private:
   std::size_t probe_used_{0};
-  std::size_t viewer_used_{0};
   std::size_t mode_used_{0};
-  std::size_t debug_used_{0};
-  std::size_t detect_used_{0};
   std::size_t calib_used_{0};
   std::size_t docker_cp_used_{0};
 };
@@ -247,26 +182,6 @@ const char* last_mode_script(const MockRunner& runner) {
   for (auto it = runner.calls.rbegin(); it != runner.calls.rend(); ++it) {
     if (it->size() >= 2 && (*it)[0] == "docker" && (*it)[1] == "exec" &&
         std::strstr(it->back().c_str(), "T1CTL_MODE_OK=") != nullptr) {
-      return it->back().c_str();
-    }
-  }
-  return "";
-}
-
-const char* last_debug_script(const MockRunner& runner) {
-  for (auto it = runner.calls.rbegin(); it != runner.calls.rend(); ++it) {
-    if (it->size() >= 2 && (*it)[0] == "docker" && (*it)[1] == "exec" &&
-        std::strstr(it->back().c_str(), "T1CTL_DEBUG_ACTION=") != nullptr) {
-      return it->back().c_str();
-    }
-  }
-  return "";
-}
-
-const char* last_detect_script(const MockRunner& runner) {
-  for (auto it = runner.calls.rbegin(); it != runner.calls.rend(); ++it) {
-    if (it->size() >= 2 && (*it)[0] == "docker" && (*it)[1] == "exec" &&
-        std::strstr(it->back().c_str(), "T1CTL_DETECT_ACTION=") != nullptr) {
       return it->back().c_str();
     }
   }
@@ -1039,160 +954,6 @@ void test_exhausted_timeout_stays_default() {
   CHECK(count_exec(runner) == units::kRosProbeAttempts);
 }
 
-const char* last_viewer_probe_script(const MockRunner& runner) {
-  for (auto it = runner.calls.rbegin(); it != runner.calls.rend(); ++it) {
-    if (it->size() >= 2 && (*it)[0] == "docker" && (*it)[1] == "exec") {
-      const char* script = it->back().c_str();
-      if (std::strstr(script, "T1CTL_BRIDGE=") != nullptr) {
-        return script;
-      }
-    }
-  }
-  return "";
-}
-
-constexpr const char* kViewerLive = "T1CTL_BRIDGE=1\nT1CTL_PORT=1\nT1CTL_ROS_DOMAIN_ID=1\n";
-constexpr const char* kViewerDown = "T1CTL_BRIDGE=0\nT1CTL_PORT=0\nT1CTL_ROS_DOMAIN_ID=1\n";
-
-void test_viewer_constants() {
-  CHECK(std::strcmp(viewer::kFixedFrame, "odom") == 0);
-  CHECK(std::strcmp(viewer::kRobotDescriptionTopic, "/robot_description") == 0);
-  CHECK(std::strcmp(viewer::kModelTfChain, "odom -> base_footprint -> base_link") == 0);
-  CHECK(std::strstr(viewer::kModelSensorFrames, "lidar_frame") != nullptr);
-  CHECK(std::strstr(viewer::kModelSensorFrames, "imu_link") != nullptr);
-  CHECK(std::strstr(viewer::kModelSensorFrames, "depth_cam_frame") != nullptr);
-  CHECK(std::strcmp(viewer::kOdomTopic, "/odom_raw") == 0);
-  CHECK(std::strcmp(viewer::kLidarScanTopic, "/scan") == 0);
-  CHECK(std::strcmp(viewer::kCameraColorTopic, "/aurora/rgb/image_raw") == 0);
-  CHECK(std::strcmp(viewer::kCameraColorCompressedTopic, "/aurora/rgb/image_raw/compressed") == 0);
-  CHECK(std::strcmp(viewer::kCameraCloudTopic, "/aurora/points2") == 0);
-  CHECK(std::strcmp(viewer::kCameraDepthTopic, "/aurora/depth/image_raw") == 0);
-  CHECK(std::strcmp(viewer::kCameraFrame, "depth_camera_link") == 0);
-  CHECK(std::strcmp(viewer::kCameraTfFrames, "base_footprint -> depth_camera_link") == 0);
-  CHECK(std::strstr(viewer::kCamera2dHint, "/aurora/rgb/image_raw/compressed") != nullptr);
-  CHECK(std::strstr(viewer::kCamera2dHint, "/aurora/rgb/image_raw") != nullptr);
-  CHECK(std::strcmp(viewer::kCamera3dHint, "/aurora/points2") == 0);
-  CHECK(std::strcmp(viewer::kPersonsTopic, "/perception/persons") == 0);
-  CHECK(std::strcmp(viewer::kNearestPersonTopic, "/perception/nearest_person") == 0);
-  CHECK(std::strcmp(viewer::kDetections2dTopic, "/perception/detections_2d") == 0);
-  CHECK(std::strcmp(viewer::kPersonsOverlayTopic, "/perception/persons/overlay") == 0);
-  CHECK(std::strstr(viewer::kPersonsOverlayHint, "t1ctl debug on") != nullptr);
-  CHECK(std::strstr(viewer::kPersonsOverlayHint, "bgr8") != nullptr);
-  CHECK(std::strcmp(viewer::kImuTopic, "/imu") == 0);
-  CHECK(std::strcmp(viewer::kImuOdomTopic, "/imu_odom") == 0);
-  CHECK(std::strcmp(viewer::kImuTfFrames, "base_footprint -> imu_link") == 0);
-}
-
-void test_viewer_probe_parse() {
-  viewer::Status status;
-  CHECK(viewer::parse_probe(kViewerLive, &status));
-  CHECK(status.bridge == viewer::Bridge::Active);
-  CHECK(status.port_listening);
-  CHECK(status.ros_domain_id == "1");
-
-  CHECK(viewer::parse_probe(kViewerDown, &status));
-  CHECK(status.bridge == viewer::Bridge::Inactive);
-  CHECK(!status.port_listening);
-  CHECK(status.ros_domain_id == "1");
-}
-
-void test_viewer_status_query() {
-  MockRunner runner;
-  runner.viewer_outs = {kViewerLive};
-  const viewer::Status status = viewer::query(runner);
-  CHECK(status.demo == viewer::DemoContour::Active);
-  CHECK(status.bridge == viewer::Bridge::Active);
-  CHECK(status.port_listening);
-  CHECK(status.host == "192.168.2.2");
-  CHECK(status.ros_domain_id == "1");
-  CHECK(runner.viewer_used() == 1);
-}
-
-void test_viewer_probe_script_no_echo() {
-  MockRunner runner;
-  runner.viewer_outs = {kViewerLive};
-  (void)viewer::query(runner);
-  const std::string script = last_viewer_probe_script(runner);
-  CHECK(script.find("pgrep -x foxglove_bridge") != std::string::npos);
-  CHECK(script.find("T1CTL_BRIDGE=") != std::string::npos);
-  CHECK(script.find(".hiwonderrc") != std::string::npos);
-  CHECK(script.find("ROS_LOCALHOST_ONLY=0") != std::string::npos);
-  CHECK(script.find("topic echo") == std::string::npos);
-  CHECK(script.find("tf2_echo") == std::string::npos);
-  CHECK(script.find("ros2 daemon start") == std::string::npos);
-}
-
-void test_viewer_start_without_systemctl() {
-  MockRunner runner;
-  runner.viewer_outs = {kViewerDown, kViewerDown, kViewerLive};
-  runner.viewer_codes = {0, 0, 0};
-  viewer::Status status;
-  CHECK(viewer::start(runner, &status));
-  CHECK(status.bridge == viewer::Bridge::Active);
-  CHECK(status.port_listening);
-  bool saw_systemctl = false;
-  for (const auto& args : runner.calls) {
-    if (!args.empty() && args[0] == "sudo") {
-      saw_systemctl = true;
-    }
-  }
-  CHECK(!saw_systemctl);
-}
-
-void test_viewer_stop_without_systemctl() {
-  MockRunner runner;
-  runner.viewer_outs = {kViewerLive, "", kViewerDown};
-  runner.viewer_codes = {0, 0};
-  viewer::Status status;
-  CHECK(viewer::stop(runner, &status));
-  CHECK(status.bridge == viewer::Bridge::Inactive);
-  CHECK(!status.port_listening);
-  bool saw_systemctl = false;
-  for (const auto& args : runner.calls) {
-    if (!args.empty() && args[0] == "sudo") {
-      saw_systemctl = true;
-    }
-  }
-  CHECK(!saw_systemctl);
-}
-
-void test_viewer_demo_down() {
-  MockRunner runner;
-  runner.container_up = false;
-  viewer::Status status;
-  CHECK(!viewer::start(runner, &status));
-  CHECK(status.demo == viewer::DemoContour::Inactive);
-  CHECK(runner.viewer_used() == 0);
-}
-
-void test_viewer_start_failure_shows_diag() {
-  MockRunner runner;
-  runner.viewer_outs = {
-      kViewerDown,
-      "T1CTL_STARTED=timeout\n"
-      "T1CTL_DIAG=package 'foxglove_bridge' not found\n"
-      "T1CTL_DIAG=executable 'foxglove_bridge' not found on the libexec directory\n",
-      kViewerDown};
-  runner.viewer_codes = {0, 1, 0};
-  viewer::Status status;
-  std::string detail;
-  CHECK(!viewer::start(runner, &status, &detail));
-  CHECK(status.bridge == viewer::Bridge::Inactive);
-  CHECK(!status.port_listening);
-  CHECK(detail.find("foxglove_bridge") != std::string::npos);
-}
-
-void test_viewer_start_demo_inactive_detail() {
-  MockRunner runner;
-  runner.container_up = false;
-  viewer::Status status;
-  std::string detail;
-  CHECK(!viewer::start(runner, &status, &detail));
-  CHECK(status.demo == viewer::DemoContour::Inactive);
-  CHECK(detail.find("t1ctl start") != std::string::npos);
-  CHECK(runner.viewer_used() == 0);
-}
-
 class StreamCapture {
  public:
   explicit StreamCapture(std::ostream& stream) : stream_(stream), old_(stream.rdbuf()) {
@@ -1262,35 +1023,6 @@ units::Status make_degraded_status() {
   return status;
 }
 
-void test_print_viewer_status_no_hints() {
-  viewer::Status status;
-  CHECK(viewer::parse_probe(kViewerLive, &status));
-  status.demo = viewer::DemoContour::Active;
-  StreamCapture capture(std::cout);
-  ui::print_viewer_status(status);
-  const std::string out = capture.str();
-  CHECK(out.find("/scan") != std::string::npos);
-  CHECK(out.find("/aurora/rgb/image_raw/compressed") != std::string::npos);
-  CHECK(out.find("/aurora/points2") != std::string::npos);
-  CHECK(out.find("persons overlay") != std::string::npos);
-  CHECK(out.find("/perception/persons") != std::string::npos);
-  CHECK(out.find("/perception/nearest_person") != std::string::npos);
-  CHECK(out.find("/perception/detections_2d") != std::string::npos);
-  CHECK(out.find("/perception/persons/overlay") != std::string::npos);
-  CHECK(out.find("t1ctl debug on") != std::string::npos);
-  CHECK(out.find("RGB with person boxes; Mac detect script for boxes") == std::string::npos);
-  CHECK(out.find("Read-only: no command topics or services from Foxglove") != std::string::npos);
-  CHECK(out.find("depth_camera_link") != std::string::npos);
-  CHECK(out.find("/imu") != std::string::npos);
-  CHECK(out.find("/imu_odom") != std::string::npos);
-  CHECK(out.find("base_footprint -> imu_link") != std::string::npos);
-  CHECK(out.find("orientation.x/y/z/w") != std::string::npos);
-  CHECK(out.find("linear_acceleration.x/y/z") != std::string::npos);
-  CHECK(out.find("no LaserScan") == std::string::npos);
-  CHECK(out.find("no robot_description") == std::string::npos);
-  CHECK(out.find("no color on") == std::string::npos);
-}
-
 void test_print_status_degraded_no_hints() {
   const units::Status status = make_degraded_status();
   StreamCapture capture(std::cout);
@@ -1358,9 +1090,9 @@ void test_print_version() {
   StreamCapture capture(std::cout);
   ui::print_version();
   const std::string out = capture.str();
-  CHECK(std::string(T1CTL_VERSION) == "1.9.0");
+  CHECK(std::string(T1CTL_VERSION) == "2.0.0");
   CHECK(out == "t1ctl " + std::string(T1CTL_VERSION) + "\n");
-  CHECK(out.find("1.9.0") != std::string::npos);
+  CHECK(out.find("2.0.0") != std::string::npos);
 }
 
 void test_print_status_version_kv() {
@@ -1373,13 +1105,12 @@ void test_print_status_version_kv() {
   ui::print_status(status);
   const std::string out = strip_ansi(capture.str());
   CHECK(out.find("version") != std::string::npos);
-  CHECK(out.find("1.9.0") != std::string::npos);
+  CHECK(out.find("2.0.0") != std::string::npos);
   CHECK(out.find(kv_text("mode", "follow")) != std::string::npos);
   CHECK(out.find(kv_text("dds buffers", "unknown")) != std::string::npos);
   CHECK(out.find("reason") == std::string::npos);
   CHECK(out.find("forbidden") == std::string::npos);
   CHECK(out.find("calibration") == std::string::npos);
-  CHECK(out.find("FOXGLOVE DESKTOP") == std::string::npos);
 }
 
 void test_print_status_imu_degraded_hint() {
@@ -1715,340 +1446,6 @@ void test_print_help_mode_section() {
   CHECK(out.find("hold motion (Forbidden)") != std::string::npos);
   CHECK(out.find("release hold, return to follow") != std::string::npos);
   CHECK(out.find("select operator pad") != std::string::npos);
-}
-
-void test_parse_debug_result_success() {
-  units::DebugChange change;
-  CHECK(units::parse_debug_result("T1CTL_DEBUG_OK=1\noverlay: on\n", &change));
-  CHECK(change.ok);
-  CHECK(change.have_overlay);
-  CHECK(change.overlay_on);
-
-  CHECK(
-      units::parse_debug_result("Welcome to Hiwonder\nT1CTL_DEBUG_OK=1\noverlay: off\n", &change));
-  CHECK(change.ok);
-  CHECK(change.have_overlay);
-  CHECK(!change.overlay_on);
-}
-
-void test_parse_debug_result_failure() {
-  units::DebugChange change;
-  CHECK(units::parse_debug_result(
-      "T1CTL_DEBUG_OK=0\ndetail: node /person_perception is not available\n", &change));
-  CHECK(!change.ok);
-  CHECK(change.detail.find("node /person_perception is not available") != std::string::npos);
-
-  units::DebugChange untouched;
-  untouched.ok = true;
-  untouched.overlay_on = true;
-  CHECK(!units::parse_debug_result("banner only\n", &untouched));
-  CHECK(untouched.ok);
-  CHECK(untouched.overlay_on);
-
-  CHECK(!units::parse_debug_result("T1CTL_DEBUG_OK=1\n", &change));
-}
-
-void test_run_debug_on_off_status() {
-  MockRunner runner;
-  runner.debug_outs = {"T1CTL_DEBUG_OK=1\noverlay: on\n", "T1CTL_DEBUG_OK=1\noverlay: off\n",
-                       "T1CTL_DEBUG_OK=1\noverlay: off\n"};
-  runner.viewer_outs = {kViewerDown, "T1CTL_STARTED=ok\n", kViewerLive, kViewerLive,
-                        "",          kViewerDown,          kViewerDown};
-  units::DebugChange change;
-  units::Status known;
-  CHECK(units::run_debug(runner, units::DebugCommand::On, &change, &known));
-  CHECK(change.ok);
-  CHECK(change.overlay_on);
-  CHECK(change.have_bridge);
-  CHECK(change.bridge_on);
-  CHECK(change.websocket_host == "192.168.2.2");
-  CHECK(known.demo == units::Demo::Active);
-  CHECK(runner.debug_used() == 1);
-  CHECK(runner.viewer_used() == 3);
-  CHECK(runner.probe_used() == 0);
-
-  const std::string on_script = last_debug_script(runner);
-  CHECK(on_script.find("python3") != std::string::npos);
-  CHECK(on_script.find("T1CTL_DEBUG_ACTION=on") != std::string::npos);
-  CHECK(on_script.find("get_parameters") != std::string::npos);
-  CHECK(on_script.find("set_parameters") != std::string::npos);
-  CHECK(on_script.find(units::kPersonPerceptionNode) != std::string::npos);
-  CHECK(on_script.find(units::kPublishOverlayParam) != std::string::npos);
-  CHECK(on_script.find("PYTHONUNBUFFERED=1") != std::string::npos);
-  CHECK(on_script.find("ROS_LOCALHOST_ONLY=0") != std::string::npos);
-  CHECK(on_script.find(".hiwonderrc >/dev/null") != std::string::npos);
-  CHECK(on_script.find("ros2 param") == std::string::npos);
-  CHECK(on_script.find("person_perception.yaml") == std::string::npos);
-
-  StreamCapture on_capture(std::cout);
-  ui::print_debug(change);
-  const std::string on_out = on_capture.str();
-  CHECK(on_out.find("overlay: on\n") != std::string::npos);
-  CHECK(on_out.find("bridge: on\n") != std::string::npos);
-  CHECK(on_out.find("websocket: ws://192.168.2.2:8765\n") != std::string::npos);
-
-  CHECK(units::run_debug(runner, units::DebugCommand::Off, &change, &known));
-  CHECK(change.ok);
-  CHECK(!change.overlay_on);
-  CHECK(change.have_bridge);
-  CHECK(!change.bridge_on);
-  CHECK(std::string(last_debug_script(runner)).find("T1CTL_DEBUG_ACTION=off") != std::string::npos);
-  CHECK(runner.viewer_used() == 6);
-
-  CHECK(units::run_debug(runner, units::DebugCommand::Status, &change, &known));
-  CHECK(change.ok);
-  CHECK(!change.overlay_on);
-  CHECK(change.have_bridge);
-  CHECK(!change.bridge_on);
-  CHECK(std::string(last_debug_script(runner)).find("T1CTL_DEBUG_ACTION=status") !=
-        std::string::npos);
-  CHECK(runner.viewer_used() == 7);
-}
-
-void test_run_debug_container_down() {
-  MockRunner runner;
-  runner.container_up = false;
-  runner.demo_active = false;
-  units::DebugChange change;
-  units::Status known;
-  CHECK(!units::run_debug(runner, units::DebugCommand::On, &change, &known));
-  CHECK(!change.ok);
-  CHECK(runner.debug_used() == 0);
-  CHECK(runner.viewer_used() == 0);
-  CHECK(known.demo == units::Demo::Inactive);
-  CHECK(change.detail.find("container mentorpi-t1 is not running") != std::string::npos);
-}
-
-void test_run_debug_node_missing() {
-  MockRunner runner;
-  runner.debug_outs = {"T1CTL_DEBUG_OK=0\ndetail: node /person_perception is not available\n"};
-  runner.debug_codes = {1};
-  runner.viewer_outs = {kViewerDown};
-  units::DebugChange change;
-  units::Status known;
-  CHECK(!units::run_debug(runner, units::DebugCommand::Status, &change, &known));
-  CHECK(!change.ok);
-  CHECK(runner.debug_used() == 1);
-  CHECK(runner.viewer_used() == 1);
-  CHECK(change.have_bridge);
-  CHECK(!change.bridge_on);
-  CHECK(change.detail.find("node /person_perception is not available") != std::string::npos);
-}
-
-void test_run_debug_overlay_fail_still_starts_bridge() {
-  MockRunner runner;
-  runner.debug_outs = {""};
-  runner.viewer_outs = {kViewerDown, "T1CTL_STARTED=ok\n", kViewerLive};
-  units::DebugChange change;
-  units::Status known;
-  CHECK(!units::run_debug(runner, units::DebugCommand::On, &change, &known));
-  CHECK(!change.ok);
-  CHECK(change.detail.find("debug helper failed") != std::string::npos);
-  CHECK(change.have_bridge);
-  CHECK(change.bridge_on);
-  CHECK(runner.viewer_used() == 3);
-}
-
-void test_print_debug_on_off() {
-  units::DebugChange change;
-  change.ok = true;
-  change.have_overlay = true;
-  change.overlay_on = true;
-  change.have_bridge = true;
-  change.bridge_on = true;
-  change.websocket_host = "192.168.88.56";
-  StreamCapture capture(std::cout);
-  ui::print_debug(change);
-  CHECK(capture.str() ==
-        "T1CTL_DEBUG_OK=1\noverlay: on\nbridge: on\nwebsocket: ws://192.168.88.56:8765\n");
-
-  change.overlay_on = false;
-  change.bridge_on = false;
-  StreamCapture off_capture(std::cout);
-  ui::print_debug(change);
-  CHECK(off_capture.str() == "T1CTL_DEBUG_OK=1\noverlay: off\nbridge: off\n");
-}
-
-void test_print_debug_error_node_missing() {
-  units::Status status;
-  status.demo = units::Demo::Active;
-  status.stock = units::Stock::Inactive;
-  StreamCapture cout_capture(std::cout);
-  StreamCapture cerr_capture(std::cerr);
-  ui::print_debug_error(status, "node /person_perception is not available");
-  const std::string cout_out = strip_ansi(cout_capture.str());
-  const std::string cerr_out = strip_ansi(cerr_capture.str());
-  CHECK(cout_out.find("T1CTL_DEBUG_OK=0\n") != std::string::npos);
-  CHECK(cout_out.find(kv_text("demo", "active")) != std::string::npos);
-  CHECK(cout_out.find("overlay:") == std::string::npos);
-  CHECK(cerr_out.find("error: debug failed\n") != std::string::npos);
-  CHECK(cerr_out.find("  node /person_perception is not available\n") != std::string::npos);
-}
-
-void test_print_help_debug_section() {
-  StreamCapture capture(std::cout);
-  ui::print_help();
-  const std::string out = capture.str();
-  CHECK(out.find("persons overlay and Foxglove bridge") != std::string::npos);
-  CHECK(out.find("DEBUG") != std::string::npos);
-  CHECK(out.find("debug on") != std::string::npos);
-  CHECK(out.find("publish persons overlay and start Foxglove bridge") != std::string::npos);
-  CHECK(out.find("stop persons overlay and Foxglove bridge") != std::string::npos);
-  CHECK(out.find("print overlay and bridge on/off") != std::string::npos);
-  CHECK(out.find("viewer start") == std::string::npos);
-  CHECK(out.find("viewer stop") == std::string::npos);
-  CHECK(out.find("viewer status") == std::string::npos);
-  CHECK(out.find("VIEWER") == std::string::npos);
-}
-
-void test_parse_detect_result_success() {
-  units::DetectChange change;
-  CHECK(units::parse_detect_result("T1CTL_DETECT_OK=1\nsource: offline\n", &change));
-  CHECK(change.ok);
-  CHECK(change.have_source);
-  CHECK(change.source_offline);
-
-  CHECK(
-      units::parse_detect_result("Welcome to Hiwonder\nT1CTL_DETECT_OK=1\nsource: mac\n", &change));
-  CHECK(change.ok);
-  CHECK(change.have_source);
-  CHECK(!change.source_offline);
-}
-
-void test_parse_detect_result_failure() {
-  units::DetectChange change;
-  CHECK(units::parse_detect_result(
-      "T1CTL_DETECT_OK=0\ndetail: node /person_detect_pi is not available\n", &change));
-  CHECK(!change.ok);
-  CHECK(change.detail.find("node /person_detect_pi is not available") != std::string::npos);
-
-  units::DetectChange untouched;
-  untouched.ok = true;
-  untouched.source_offline = true;
-  CHECK(!units::parse_detect_result("banner only\n", &untouched));
-  CHECK(untouched.ok);
-  CHECK(untouched.source_offline);
-
-  CHECK(!units::parse_detect_result("T1CTL_DETECT_OK=1\n", &change));
-}
-
-void test_detect_source_offline_mac_status() {
-  MockRunner runner;
-  runner.detect_outs = {"T1CTL_DETECT_OK=1\nsource: offline\n", "T1CTL_DETECT_OK=1\nsource: mac\n",
-                        "T1CTL_DETECT_OK=1\nsource: mac\n"};
-  units::DetectChange change;
-  units::Status known;
-  CHECK(units::detect_source(runner, units::DetectCommand::Offline, &change, &known));
-  CHECK(change.ok);
-  CHECK(change.source_offline);
-  CHECK(known.demo == units::Demo::Active);
-  CHECK(runner.detect_used() == 1);
-  CHECK(runner.probe_used() == 0);
-
-  const std::string offline_script = last_detect_script(runner);
-  CHECK(offline_script.find("python3") != std::string::npos);
-  CHECK(offline_script.find("T1CTL_DETECT_ACTION=offline") != std::string::npos);
-  CHECK(offline_script.find("get_parameters") != std::string::npos);
-  CHECK(offline_script.find("set_parameters") != std::string::npos);
-  CHECK(offline_script.find(units::kPersonPerceptionNode) != std::string::npos);
-  CHECK(offline_script.find(units::kPersonDetectPiNode) != std::string::npos);
-  CHECK(offline_script.find(units::kDetectionsSourceParam) != std::string::npos);
-  CHECK(offline_script.find(units::kDetectEnabledParam) != std::string::npos);
-  CHECK(offline_script.find("PYTHONUNBUFFERED=1") != std::string::npos);
-  CHECK(offline_script.find("ROS_LOCALHOST_ONLY=0") != std::string::npos);
-  CHECK(offline_script.find(".hiwonderrc >/dev/null") != std::string::npos);
-  CHECK(offline_script.find("ros2 param") == std::string::npos);
-
-  CHECK(units::detect_source(runner, units::DetectCommand::Mac, &change, &known));
-  CHECK(change.ok);
-  CHECK(!change.source_offline);
-  CHECK(std::string(last_detect_script(runner)).find("T1CTL_DETECT_ACTION=mac") !=
-        std::string::npos);
-
-  CHECK(units::detect_source(runner, units::DetectCommand::Status, &change, &known));
-  CHECK(change.ok);
-  CHECK(!change.source_offline);
-  CHECK(std::string(last_detect_script(runner)).find("T1CTL_DETECT_ACTION=status") !=
-        std::string::npos);
-}
-
-void test_detect_source_container_down() {
-  MockRunner runner;
-  runner.container_up = false;
-  runner.demo_active = false;
-  units::DetectChange change;
-  units::Status known;
-  CHECK(!units::detect_source(runner, units::DetectCommand::Offline, &change, &known));
-  CHECK(!change.ok);
-  CHECK(runner.detect_used() == 0);
-  CHECK(known.demo == units::Demo::Inactive);
-  CHECK(change.detail.find("container mentorpi-t1 is not running") != std::string::npos);
-}
-
-void test_detect_source_node_missing() {
-  MockRunner runner;
-  runner.detect_outs = {"T1CTL_DETECT_OK=0\ndetail: node /person_detect_pi is not available\n"};
-  runner.detect_codes = {1};
-  units::DetectChange change;
-  units::Status known;
-  CHECK(!units::detect_source(runner, units::DetectCommand::Status, &change, &known));
-  CHECK(!change.ok);
-  CHECK(runner.detect_used() == 1);
-  CHECK(change.detail.find("node /person_detect_pi is not available") != std::string::npos);
-}
-
-void test_detect_source_helper_empty_output() {
-  MockRunner runner;
-  runner.detect_outs = {""};
-  units::DetectChange change;
-  units::Status known;
-  CHECK(!units::detect_source(runner, units::DetectCommand::Offline, &change, &known));
-  CHECK(!change.ok);
-  CHECK(change.detail.find("detect helper failed") != std::string::npos);
-}
-
-void test_print_detect_offline_mac() {
-  units::DetectChange change;
-  change.ok = true;
-  change.have_source = true;
-  change.source_offline = true;
-  StreamCapture capture(std::cout);
-  ui::print_detect(change);
-  CHECK(capture.str() == "T1CTL_DETECT_OK=1\nsource: offline\n");
-
-  change.source_offline = false;
-  StreamCapture mac_capture(std::cout);
-  ui::print_detect(change);
-  CHECK(mac_capture.str() == "T1CTL_DETECT_OK=1\nsource: mac\n");
-}
-
-void test_print_detect_error_node_missing() {
-  units::Status status;
-  status.demo = units::Demo::Active;
-  status.stock = units::Stock::Inactive;
-  StreamCapture cout_capture(std::cout);
-  StreamCapture cerr_capture(std::cerr);
-  ui::print_detect_error(status, "node /person_detect_pi is not available");
-  const std::string cout_out = strip_ansi(cout_capture.str());
-  const std::string cerr_out = strip_ansi(cerr_capture.str());
-  CHECK(cout_out.find("T1CTL_DETECT_OK=0\n") != std::string::npos);
-  CHECK(cout_out.find(kv_text("demo", "active")) != std::string::npos);
-  CHECK(cout_out.find("source:") == std::string::npos);
-  CHECK(cerr_out.find("error: detect failed\n") != std::string::npos);
-  CHECK(cerr_out.find("  node /person_detect_pi is not available\n") != std::string::npos);
-}
-
-void test_print_help_detect_section() {
-  StreamCapture capture(std::cout);
-  ui::print_help();
-  const std::string out = capture.str();
-  CHECK(out.find("person detections source") != std::string::npos);
-  CHECK(out.find("DETECT") != std::string::npos);
-  CHECK(out.find("detect offline") != std::string::npos);
-  CHECK(out.find("use onboard YOLO11n") != std::string::npos);
-  CHECK(out.find("detect mac") != std::string::npos);
-  CHECK(out.find("use Mac detections") != std::string::npos);
-  CHECK(out.find("print source mac/offline") != std::string::npos);
 }
 
 constexpr const char* kCalibFactoryOut =
@@ -2891,16 +2288,6 @@ int main() {
   test_live_probe_all_active();
   test_cold_then_warm_queries();
   test_exhausted_timeout_stays_default();
-  test_viewer_constants();
-  test_viewer_probe_parse();
-  test_viewer_status_query();
-  test_viewer_probe_script_no_echo();
-  test_viewer_start_without_systemctl();
-  test_viewer_stop_without_systemctl();
-  test_viewer_demo_down();
-  test_viewer_start_failure_shows_diag();
-  test_viewer_start_demo_inactive_detail();
-  test_print_viewer_status_no_hints();
   test_print_status_degraded_no_hints();
   test_print_status_imu_degraded_hint();
   test_print_status_odometry_degraded_hint();
@@ -2933,24 +2320,6 @@ int main() {
   test_print_mode_manual();
   test_print_mode_error_container_down();
   test_print_help_mode_section();
-  test_parse_debug_result_success();
-  test_parse_debug_result_failure();
-  test_run_debug_on_off_status();
-  test_run_debug_container_down();
-  test_run_debug_node_missing();
-  test_run_debug_overlay_fail_still_starts_bridge();
-  test_print_debug_on_off();
-  test_print_debug_error_node_missing();
-  test_print_help_debug_section();
-  test_parse_detect_result_success();
-  test_parse_detect_result_failure();
-  test_detect_source_offline_mac_status();
-  test_detect_source_container_down();
-  test_detect_source_node_missing();
-  test_detect_source_helper_empty_output();
-  test_print_detect_offline_mac();
-  test_print_detect_error_node_missing();
-  test_print_help_detect_section();
   test_parse_ros_probe_calibration();
   test_query_calibration_from_probe();
   test_query_calibration_unused_from_probe();

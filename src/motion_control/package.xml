@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>motion_control</name>
-  <version>0.4.1</version>
+  <version>0.5.1</version>
   <description>Follow-target P-law and motion_control node (F11).</description>
   <maintainer email="lunix0x@gmail.com">Roman Kalashnikov</maintainer>
   <license>Apache-2.0</license>

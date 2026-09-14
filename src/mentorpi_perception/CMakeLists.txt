@@ -16,18 +16,10 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(vision_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(mentorpi_msgs REQUIRED)
-# Distro OpenCV (libopencv-dev), not Deptrum /usr/local 4.10 (SD013 D9).
-find_package(OpenCV REQUIRED COMPONENTS core imgproc)
-set(_mentorpi_opencv_includes "${OpenCV_INCLUDE_DIRS}")
-if(_mentorpi_opencv_includes MATCHES "/usr/local")
-  message(FATAL_ERROR
-    "mentorpi_perception must link distro OpenCV, not Deptrum ${_mentorpi_opencv_includes}")
-endif()
 
 add_executable(person_perception src/person_perception.cpp)
 ament_target_dependencies(
@@ -37,13 +29,11 @@ ament_target_dependencies(
   sensor_msgs
   geometry_msgs
   vision_msgs
-  cv_bridge
   tf2
   tf2_ros
   tf2_geometry_msgs
 )
-target_include_directories(person_perception PRIVATE include ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(person_perception ${OpenCV_LIBS})
+target_include_directories(person_perception PRIVATE include)
 # Humble cpp typesupport of mentorpi_msgs (not deprecated rosidl_target_interfaces).
 # rosidl_get_typesupport_target() only works in the generating package; a
 # downstream node links the exported C++ typesupport target instead.

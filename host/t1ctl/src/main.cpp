@@ -52,32 +52,6 @@ int run_mode(units::ModeCommand command) {
   return 0;
 }
 
-int run_debug(units::DebugCommand command) {
-  units::DebugChange change;
-  units::Status known;
-  if (!units::run_debug(units::process_runner(), command, &change, &known)) {
-    if (change.have_overlay || change.have_bridge) {
-      ui::print_debug(change);
-      return 1;
-    }
-    ui::print_debug_error(known, change.detail);
-    return 1;
-  }
-  ui::print_debug(change);
-  return 0;
-}
-
-int run_detect(units::DetectCommand command) {
-  units::DetectChange change;
-  units::Status known;
-  if (!units::detect_source(units::process_runner(), command, &change, &known)) {
-    ui::print_detect_error(known, change.detail);
-    return 1;
-  }
-  ui::print_detect(change);
-  return 0;
-}
-
 int run_calib_show() {
   calib::Show show;
   if (!calib::query(units::process_runner(), &show)) {
@@ -209,14 +183,6 @@ int main(int argc, char** argv) {
   auto* mode_allow = cmd_mode->add_subcommand("allow", "release hold, return to follow");
   auto* mode_manual = cmd_mode->add_subcommand("manual", "select operator pad");
   cmd_mode->require_subcommand(1, 1);
-  auto* cmd_debug = app.add_subcommand("debug", "persons overlay and Foxglove bridge");
-  auto* debug_on = cmd_debug->add_subcommand("on", "publish persons overlay and start bridge");
-  auto* debug_off = cmd_debug->add_subcommand("off", "stop persons overlay and bridge");
-  cmd_debug->require_subcommand(0, 1);
-  auto* cmd_detect = app.add_subcommand("detect", "person detections source");
-  auto* detect_offline = cmd_detect->add_subcommand("offline", "use onboard YOLO11n");
-  auto* detect_mac = cmd_detect->add_subcommand("mac", "use Mac detections");
-  cmd_detect->require_subcommand(0, 1);
   auto* cmd_calib = app.add_subcommand("calib", "sensor extrinsics");
   cmd_calib->add_subcommand("status", "print live poses and residual");
   auto* calib_corner = cmd_calib->add_subcommand("corner", "camera to lidar at a corner");
@@ -290,24 +256,6 @@ int main(int argc, char** argv) {
     }
     std::cerr << "error: missing mode subcommand\n";
     return 1;
-  }
-  if (cmd_debug->parsed()) {
-    if (debug_on->parsed()) {
-      return run_debug(units::DebugCommand::On);
-    }
-    if (debug_off->parsed()) {
-      return run_debug(units::DebugCommand::Off);
-    }
-    return run_debug(units::DebugCommand::Status);
-  }
-  if (cmd_detect->parsed()) {
-    if (detect_offline->parsed()) {
-      return run_detect(units::DetectCommand::Offline);
-    }
-    if (detect_mac->parsed()) {
-      return run_detect(units::DetectCommand::Mac);
-    }
-    return run_detect(units::DetectCommand::Status);
   }
   if (cmd_calib->parsed()) {
     if (calib_corner->parsed()) {

@@ -146,53 +146,6 @@ bool parse_mode_result(const std::string& text, ModeChange* change);
 bool set_mode(ModeCommand command, ModeChange* change, Status* known);
 bool set_mode(ProcessRunner& runner, ModeCommand command, ModeChange* change, Status* known);
 
-enum class DebugCommand { Status, On, Off };
-
-struct DebugChange {
-  bool ok{false};
-  bool have_overlay{false};
-  bool overlay_on{false};
-  bool have_bridge{false};
-  bool bridge_on{false};
-  std::string websocket_host;
-  std::string detail;
-};
-
-inline constexpr const char* kPersonPerceptionNode = "/person_perception";
-inline constexpr const char* kPublishOverlayParam = "publish_overlay";
-
-// Structured stdout of in-container ros_debug.py. Requires T1CTL_DEBUG_OK=0|1.
-bool parse_debug_result(const std::string& text, DebugChange* change);
-
-// Overlay via ros_debug.py plus Foxglove bridge via viewer::start/stop/query.
-// Applies both independently; `ok` requires overlay helper and bridge action
-// (or status read) to succeed. Does not write YAML.
-bool run_debug(DebugCommand command, DebugChange* change, Status* known);
-bool run_debug(ProcessRunner& runner, DebugCommand command, DebugChange* change, Status* known);
-
-enum class DetectCommand { Status, Offline, Mac };
-
-struct DetectChange {
-  bool ok{false};
-  bool have_source{false};
-  bool source_offline{false};
-  std::string detail;
-};
-
-inline constexpr const char* kPersonDetectPiNode = "/person_detect_pi";
-inline constexpr const char* kDetectionsSourceParam = "detections_source";
-inline constexpr const char* kDetectEnabledParam = "enabled";
-
-// Structured stdout of in-container ros_detect.py. Requires T1CTL_DETECT_OK=0|1.
-bool parse_detect_result(const std::string& text, DetectChange* change);
-
-// Reads or sets detections source via docker exec + ros_detect.py. Does not
-// write YAML. On failure fills `known` with systemd facts only and
-// `change.detail` for the error block.
-bool detect_source(DetectCommand command, DetectChange* change, Status* known);
-bool detect_source(ProcessRunner& runner, DetectCommand command, DetectChange* change,
-                   Status* known);
-
 // YAML of `/control/status`. Ignores a source banner before the document.
 // Returns true only when both `state` and `remote_controller` parsed.
 // `reason` is optional; stored only when mode is Forbidden.

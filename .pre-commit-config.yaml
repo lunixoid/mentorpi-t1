@@ -6,7 +6,6 @@ exclude: |
     build-test/|
     install/|
     log/|
-    \.pixi/|
     host/t1ctl/build-host/
   )
 repos:
@@ -32,7 +31,6 @@ repos:
         args:
           - "--max-line-length=120"
           - "--extend-ignore=E203"
-          - "--per-file-ignores=host/mac_person_detect/person_detect.py:E402"
   - repo: local
     hooks:
       - id: git-diff-check

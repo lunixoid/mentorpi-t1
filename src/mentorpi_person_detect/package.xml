@@ -2,8 +2,8 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mentorpi_person_detect</name>
-  <version>0.3.0</version>
-  <description>Onboard YOLO11n person detection via NCNN on CPU (Pi overlay). Not Mac person_detect; not Hailo.</description>
+  <version>0.4.0</version>
+  <description>Onboard YOLO11n person detection via NCNN on CPU (Pi overlay). Not Hailo.</description>
   <maintainer email="lunix0x@gmail.com">Roman Kalashnikov</maintainer>
   <license>Apache-2.0</license>
 

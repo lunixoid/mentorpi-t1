@@ -85,7 +85,7 @@ void test_ac5_legacy() {
 
 void test_ac1_follow_pause() {
   // Fresh inference frames from follow_pause_20260910_154522
-  // /perception/detections_2d_onboard (header.stamp, republish dropped). Extract:
+  // /perception/detections_2d (header.stamp, republish dropped). Extract:
   // scratch/sd028/a5.py
   using mentorpi_person_detect::DetectionBox;
   struct Frame {

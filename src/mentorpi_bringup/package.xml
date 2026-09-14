@@ -2,8 +2,8 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mentorpi_bringup</name>
-  <version>0.9.0</version>
-  <description>Stage 1 launch: stub graph, chassis SIT, control mux (F06), lidar layer (F03), IMU layer (F04), camera layer (F05), person perception (F08), FollowPerson status (F10), motion control (F11), viewer bridge; no Hiwonder apps.</description>
+  <version>0.10.0</version>
+  <description>Stage 1 launch: stub graph, chassis SIT, control mux (F06), lidar layer (F03), IMU layer (F04), camera layer (F05), person perception (F08), FollowPerson status (F10), motion control (F11); no Hiwonder apps.</description>
   <maintainer email="lunix0x@gmail.com">Roman Kalashnikov</maintainer>
   <license>Apache-2.0</license>
 
@@ -26,7 +26,6 @@
   <exec_depend>xacro</exec_depend>
   <exec_depend>ros_robot_controller</exec_depend>
   <exec_depend>hiwonder_controller</exec_depend>
-  <exec_depend>foxglove_bridge</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>ros2launch</exec_depend>
 

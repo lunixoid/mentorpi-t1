@@ -1,7 +1,6 @@
 # Cross-build environment for the ROS overlay (linux/arm64).
 # Apt lives here; project builds mount the repo and run colcon without apt-get.
 # Distro OpenCV + Humble vision stack. Do not use Deptrum /usr/local OpenCV 4.10.
-# Mac person_detect is not in src/.
 # NCNN (CPU, static, no Vulkan) for mentorpi_person_detect — SD026 T1.
 # Vosk aarch64 + small-ru model for mentorpi_voice — SD031 T2.
 FROM ros:humble

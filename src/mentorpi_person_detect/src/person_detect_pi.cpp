@@ -64,11 +64,11 @@ cv::Mat image_to_bgr(const sensor_msgs::msg::Image::ConstSharedPtr& msg) {
 class PersonDetectPiNode : public rclcpp::Node {
  public:
   PersonDetectPiNode() : Node("person_detect_pi") {
-    enabled_ = declare_parameter<bool>("enabled", false);
+    enabled_ = declare_parameter<bool>("enabled", true);
     const std::string image_topic =
         declare_parameter<std::string>("image_topic", "/aurora/rgb/image_raw");
     const std::string detections_topic =
-        declare_parameter<std::string>("detections_topic", "/perception/detections_2d_onboard");
+        declare_parameter<std::string>("detections_topic", "/perception/detections_2d");
     const std::string weights_rel =
         declare_parameter<std::string>("weights", "models/yolo11n.ncnn.param");
     confidence_threshold_ = declare_parameter<double>("confidence_threshold", 0.25);
@@ -303,7 +303,7 @@ class PersonDetectPiNode : public rclcpp::Node {
     detections_pub_->publish(last_out_);
   }
 
-  std::atomic<bool> enabled_{false};
+  std::atomic<bool> enabled_{true};
   double confidence_threshold_{0.25};
   std::chrono::milliseconds infer_period_{500};
   std::chrono::steady_clock::time_point last_infer_{};

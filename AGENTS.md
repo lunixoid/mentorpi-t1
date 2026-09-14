@@ -56,12 +56,12 @@ IP Wi-Fi: 192.168.149.1
 
 Всегда используй команду `pre-commit run --all-files` вместо встроенных линтеров.
 
-Конфигурация — `.pre-commit-config.yaml` и `.clang-format`: clang-format Google, ColumnLimit 100; black и isort (line-length 120, profile black); flake8 (max-line-length 120, E203 игнор из‑за black, E402 только в `host/mac_person_detect/person_detect.py`); `git diff --check` (хвостовые пробелы, пробел перед табом, маркеры конфликта). Не запускай black / flake8 / isort / clang-format напрямую и не подменяй их ruff, mypy или другими инструментами.
+Конфигурация — `.pre-commit-config.yaml` и `.clang-format`: clang-format Google, ColumnLimit 100; black и isort (line-length 120, profile black); flake8 (max-line-length 120, E203 игнор из‑за black); `git diff --check` (хвостовые пробелы, пробел перед табом, маркеры конфликта). Не запускай black / flake8 / isort / clang-format напрямую и не подменяй их ruff, mypy или другими инструментами.
 
 Установка хука (один раз в корне репозитория):
 
 ```bash
-pip install pre-commit
+python3 -m pip install --user pre-commit   # не apt: версия 2.17 не читает хук clang-format
 pre-commit install
 ```
 
@@ -69,13 +69,13 @@ pre-commit install
 
 ## Сборка и стенд
 
-Не компилировать overlay на Pi. С машины разработки:
+Не компилировать overlay на Pi. С **Linux-хоста** разработки (зависимости: `sudo apt install -y sshpass file qemu-user-static binfmt-support cmake python3-pip` и `python3 -m pip install --user pre-commit`):
 
 1. `make build` — overlay linux/arm64 + `t1ctl` в `build-arm64/` (окружение: `make env`, если нет builder-образов)
 2. `make deploy` — копирование на Pi (`sshpass`)
 3. `make provision` — один раз: `docker build FROM` образа `MentorPi` + контейнер, включить наш юнит, выключить `start_node`
 
-Обновления только кода: `make build`, затем `make deploy`. Не ставить на Pi бинарник `t1ctl` с Mac/хоста. `make` без цели — help.
+Обновления только кода: `make build`, затем `make deploy`. На Pi нельзя ставить `t1ctl`, собранный нативно на машине разработки — только arm64 из `build-arm64/`. `make` без цели — help.
 
 Логирование на стенде: если приложение не может писать в `.cursor` (sandbox), при отладке использовать HTTP ingest.
 

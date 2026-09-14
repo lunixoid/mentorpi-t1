@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(t1ctl VERSION 1.9.0 LANGUAGES CXX)
+project(t1ctl VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,18 +16,6 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/ros_mode.py" T1CTL_ROS_MODE_PY_CONTEN
 string(FIND "${T1CTL_ROS_MODE_PY_CONTENT}" "${T1CTL_ROS_MODE_PY_DELIM}" _mode_delim_pos)
 if(NOT _mode_delim_pos EQUAL -1)
   message(FATAL_ERROR "ros_mode.py must not contain embed delimiter ${T1CTL_ROS_MODE_PY_DELIM}")
-endif()
-set(T1CTL_ROS_DEBUG_PY_DELIM "T1CTL_DEBUG_END")
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/ros_debug.py" T1CTL_ROS_DEBUG_PY_CONTENT)
-string(FIND "${T1CTL_ROS_DEBUG_PY_CONTENT}" "${T1CTL_ROS_DEBUG_PY_DELIM}" _debug_delim_pos)
-if(NOT _debug_delim_pos EQUAL -1)
-  message(FATAL_ERROR "ros_debug.py must not contain embed delimiter ${T1CTL_ROS_DEBUG_PY_DELIM}")
-endif()
-set(T1CTL_ROS_DETECT_PY_DELIM "T1CTL_DETECT_END")
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/ros_detect.py" T1CTL_ROS_DETECT_PY_CONTENT)
-string(FIND "${T1CTL_ROS_DETECT_PY_CONTENT}" "${T1CTL_ROS_DETECT_PY_DELIM}" _detect_delim_pos)
-if(NOT _detect_delim_pos EQUAL -1)
-  message(FATAL_ERROR "ros_detect.py must not contain embed delimiter ${T1CTL_ROS_DETECT_PY_DELIM}")
 endif()
 set(T1CTL_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY "${T1CTL_GENERATED_DIR}")
@@ -51,26 +39,6 @@ ${T1CTL_ROS_MODE_PY_CONTENT})${T1CTL_ROS_MODE_PY_DELIM}\";
 
 }  // namespace units
 ")
-file(WRITE "${T1CTL_GENERATED_DIR}/ros_debug_embed.hpp"
-"#pragma once
-
-namespace units {
-
-inline constexpr const char kRosDebugPy[] = R\"${T1CTL_ROS_DEBUG_PY_DELIM}(
-${T1CTL_ROS_DEBUG_PY_CONTENT})${T1CTL_ROS_DEBUG_PY_DELIM}\";
-
-}  // namespace units
-")
-file(WRITE "${T1CTL_GENERATED_DIR}/ros_detect_embed.hpp"
-"#pragma once
-
-namespace units {
-
-inline constexpr const char kRosDetectPy[] = R\"${T1CTL_ROS_DETECT_PY_DELIM}(
-${T1CTL_ROS_DETECT_PY_CONTENT})${T1CTL_ROS_DETECT_PY_DELIM}\";
-
-}  // namespace units
-")
 
 include(FetchContent)
 # CLI11 1.5.x is the C++ Clap analog named in the design stack (1.4 also exists).
@@ -88,7 +56,6 @@ add_executable(t1ctl
   src/main.cpp
   src/ui.cpp
   src/units.cpp
-  src/viewer.cpp
   src/calib.cpp
 )
 target_include_directories(t1ctl PRIVATE
@@ -105,7 +72,6 @@ add_executable(t1ctl_test
   tests/test_status.cpp
   src/ui.cpp
   src/units.cpp
-  src/viewer.cpp
   src/calib.cpp
 )
 target_include_directories(t1ctl_test PRIVATE

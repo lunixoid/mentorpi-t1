@@ -3,13 +3,12 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "geometry_msgs/msg/twist.hpp"
 #include "mentorpi_msgs/msg/control_state.hpp"
 #include "mentorpi_msgs/msg/nearest_person.hpp"
 #include "motion_control/follow_control.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace motion_control {
@@ -38,24 +37,17 @@ class MotionControlNode : public rclcpp::Node {
       throw std::invalid_argument("max_linear_follow must be <= max_linear");
     }
 
-    declare_parameter<std::string>("detections_source", "mac");
-    declare_parameter<int64_t>("nearest_timeout_ms", 300);
-    declare_parameter<int64_t>("nearest_timeout_offline_ms", 1000);
+    // Read once at start; reject runtime sets instead of silently ignoring them.
+    rcl_interfaces::msg::ParameterDescriptor start_only;
+    start_only.read_only = true;
+    declare_parameter<int64_t>("nearest_timeout_ms", 1000, start_only);
     declare_parameter<double>("rate_hz", 20.0);
 
-    detections_source_ = get_parameter("detections_source").as_string();
-    if (detections_source_ != "mac" && detections_source_ != "offline") {
-      throw std::invalid_argument("detections_source must be 'mac' or 'offline'");
-    }
-    nearest_timeout_mac_ms_ = get_parameter("nearest_timeout_ms").as_int();
-    if (nearest_timeout_mac_ms_ <= 0) {
+    const int64_t nearest_timeout_ms = get_parameter("nearest_timeout_ms").as_int();
+    if (nearest_timeout_ms <= 0) {
       throw std::invalid_argument("nearest_timeout_ms must be > 0");
     }
-    nearest_timeout_offline_ms_ = get_parameter("nearest_timeout_offline_ms").as_int();
-    if (nearest_timeout_offline_ms_ <= 0) {
-      throw std::invalid_argument("nearest_timeout_offline_ms must be > 0");
-    }
-    apply_nearest_timeout();
+    nearest_timeout_ = std::chrono::milliseconds(nearest_timeout_ms);
 
     const double rate_hz = get_parameter("rate_hz").as_double();
     if (!(rate_hz > 0.0)) {
@@ -81,18 +73,12 @@ class MotionControlNode : public rclcpp::Node {
     timer_ = create_wall_timer(std::chrono::duration_cast<std::chrono::nanoseconds>(period),
                                std::bind(&MotionControlNode::on_timer, this));
 
-    param_cb_ = add_on_set_parameters_callback(
-        std::bind(&MotionControlNode::on_set_parameters, this, std::placeholders::_1));
-
     RCLCPP_INFO(get_logger(),
                 "motion_control started (rate_hz=%.1f standoff=%.2f kp_lin=%.2f "
                 "max_linear_follow=%.2f accel_linear=%.2f decel_linear=%.2f "
-                "detections_source=%s nearest_timeout_ms=%ld nearest_timeout_offline_ms=%ld "
-                "active_nearest_timeout_ms=%ld)",
+                "nearest_timeout_ms=%ld)",
                 rate_hz, params_.standoff, params_.kp_lin, params_.max_linear_follow,
-                params_.accel_linear, params_.decel_linear, detections_source_.c_str(),
-                nearest_timeout_mac_ms_, nearest_timeout_offline_ms_,
-                static_cast<int64_t>(nearest_timeout_.count()));
+                params_.accel_linear, params_.decel_linear, nearest_timeout_ms);
   }
 
  private:
@@ -103,75 +89,6 @@ class MotionControlNode : public rclcpp::Node {
       throw std::invalid_argument(std::string(name) + " must be > 0");
     }
     return value;
-  }
-
-  void apply_nearest_timeout() {
-    const int64_t ms =
-        detections_source_ == "offline" ? nearest_timeout_offline_ms_ : nearest_timeout_mac_ms_;
-    nearest_timeout_ = std::chrono::milliseconds(ms);
-  }
-
-  rcl_interfaces::msg::SetParametersResult on_set_parameters(
-      const std::vector<rclcpp::Parameter>& params) {
-    rcl_interfaces::msg::SetParametersResult result;
-    result.successful = true;
-    std::string next_source = detections_source_;
-    bool have_source = false;
-    int64_t next_mac_ms = nearest_timeout_mac_ms_;
-    int64_t next_offline_ms = nearest_timeout_offline_ms_;
-    bool have_timeout = false;
-    for (const auto& p : params) {
-      if (p.get_name() == "detections_source") {
-        if (p.get_type() != rclcpp::ParameterType::PARAMETER_STRING) {
-          result.successful = false;
-          result.reason = "detections_source must be string";
-          return result;
-        }
-        next_source = p.as_string();
-        if (next_source != "mac" && next_source != "offline") {
-          result.successful = false;
-          result.reason = "detections_source must be 'mac' or 'offline'";
-          return result;
-        }
-        have_source = true;
-        continue;
-      }
-      if (p.get_name() == "nearest_timeout_ms" || p.get_name() == "nearest_timeout_offline_ms") {
-        if (p.get_type() != rclcpp::ParameterType::PARAMETER_INTEGER) {
-          result.successful = false;
-          result.reason = std::string(p.get_name()) + " must be integer";
-          return result;
-        }
-        const int64_t value = p.as_int();
-        if (value <= 0) {
-          result.successful = false;
-          result.reason = std::string(p.get_name()) + " must be > 0";
-          return result;
-        }
-        if (p.get_name() == "nearest_timeout_ms") {
-          next_mac_ms = value;
-        } else {
-          next_offline_ms = value;
-        }
-        have_timeout = true;
-      }
-    }
-    const bool source_changed = have_source && next_source != detections_source_;
-    if (have_timeout) {
-      nearest_timeout_mac_ms_ = next_mac_ms;
-      nearest_timeout_offline_ms_ = next_offline_ms;
-    }
-    if (source_changed) {
-      detections_source_ = next_source;
-    }
-    if (source_changed || have_timeout) {
-      apply_nearest_timeout();
-      RCLCPP_INFO(get_logger(),
-                  "detections_source=%s active_nearest_timeout_ms=%ld (mac=%ld offline=%ld)",
-                  detections_source_.c_str(), static_cast<int64_t>(nearest_timeout_.count()),
-                  nearest_timeout_mac_ms_, nearest_timeout_offline_ms_);
-    }
-    return result;
   }
 
   void on_control_state(const mentorpi_msgs::msg::ControlState::SharedPtr msg) {
@@ -212,10 +129,7 @@ class MotionControlNode : public rclcpp::Node {
   FollowControlParams params_{};
   double dt_{0.05};
   double prev_linear_{0.0};
-  std::chrono::milliseconds nearest_timeout_{300};
-  int64_t nearest_timeout_mac_ms_{300};
-  int64_t nearest_timeout_offline_ms_{1000};
-  std::string detections_source_{"mac"};
+  std::chrono::milliseconds nearest_timeout_{1000};
   bool have_control_state_{false};
   uint8_t control_state_{kControlForbidden};
   bool have_nearest_{false};
@@ -229,7 +143,6 @@ class MotionControlNode : public rclcpp::Node {
   rclcpp::Subscription<mentorpi_msgs::msg::NearestPerson>::SharedPtr nearest_sub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr desired_twist_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;
 };
 
 }  // namespace motion_control
