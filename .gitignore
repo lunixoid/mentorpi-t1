@@ -1,0 +1,17 @@
+docs/vendor-docs/*
+*.png
+*.pt
+build/
+build-arm64/
+build-test/
+install/
+log/
+.cache/
+.pixi/
+__pycache__/
+*.pyc
+host/t1ctl/build-host/
+host/mac_person_detect/fastdds-lan.xml
+!host/mac_person_detect/pixi.lock
+scratch/
+

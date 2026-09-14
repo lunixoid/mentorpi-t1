@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Цвета — t1ctl</title>
+<link rel="stylesheet" href="tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="цвета">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — цвета</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; roles: bg,fg,muted,accent=warn,ok,err; info=fg"><span class="prompt">$</span> <span class="cmd">t1ctl</span>
+<span class="bold">РОЛИ</span>
+<span class="fg-muted">bg      </span>#E9E1CC  холст
+<span class="fg-muted">fg      </span>#241E16  резина трака
+<span class="fg-muted">muted   </span><span class="fg-muted">#6A6356  пыль / dim</span>
+<span class="fg-muted">accent  </span><span class="fg-accent">#B33A1A  окись / warn / prompt</span>
+<span class="fg-muted">ok      </span><span class="fg-ok">#3F4F20  олива / active</span>
+<span class="fg-muted">err     </span><span class="fg-err">#8C1E2E  failed / forbidden / unused</span>
+
+<span class="bold">СТРОКА</span>
+<span class="fg-muted">demo               </span><span class="fg-ok">active</span>
+<span class="fg-muted">mode               </span><span class="bold fg-err">forbidden</span>
+<span class="fg-muted">source             </span><span class="bold fg-err">unused</span>
+<span class="fg-muted">reason             </span>invalid file
+
+<span class="bold">NO_COLOR</span>
+<span class="fg-muted">те же слова, без hue. смысл в токене:</span>
+source             factory
+source             unused
+error: calib floor failed</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

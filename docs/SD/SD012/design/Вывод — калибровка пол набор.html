@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — калибровка пол набор</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="calib-floor-hold">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — calib floor</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl calib floor; stdout hold; lang: en; roles: muted=keys and hint; stack: Clap; version: 1.4.1"><span class="prompt">$</span> <span class="cmd">t1ctl calib floor</span>
+<span class="fg-muted">stage             </span>floor
+  <span class="fg-muted">stand on flat floor, camera must see the floor</span>
+<span class="fg-muted">frames            </span>12
+<span class="fg-muted">floor points      </span>1840
+<span class="fg-muted">imu samples       </span>12</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

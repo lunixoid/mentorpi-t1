@@ -1,0 +1,32 @@
+[Unit]
+Description=MentorPi T1 contour (stage1 overlay in mentorpi-t1)
+Requires=docker.service
+After=docker.service
+# Mutual exclusion with stock Hiwonder autostart; t1ctl also stop+disable the other unit.
+Conflicts=start_node.service
+
+[Service]
+Type=simple
+Restart=no
+User=pi
+# Exclusive with stock: stop MentorPi (already-down is OK). Then start ours;
+# missing/unstartable mentorpi-t1 fails the unit (demo failed).
+ExecStartPre=-/usr/bin/docker stop -t 1 MentorPi
+ExecStartPre=/usr/bin/docker start mentorpi-t1
+# docker exec as ubuntu in bash. Vendor .hiwonderrc first (vendor SIT pkgs +
+# ROS_DOMAIN_ID: in bash it sources Humble and ros2_ws/install/local_setup.bash).
+# .hiwonderrc sets ROS_LOCALHOST_ONLY=1; overlay must clear it so RGB reaches
+# the Mac on 192.168.88.0/24 (SD013 D7). Deptrum isolated prefix (SD008) if the
+# overlay image has it. Overlay setup.bash last. We left zsh: vendor local_setup
+# is commented there, and overlay setup.bash breaks under zsh (BASH_SOURCE).
+# exec so the tracked PID is ros2 launch. Not Hiwonder bringup.launch.py.
+ExecStart=/usr/bin/docker exec -u ubuntu -w /home/ubuntu mentorpi-t1 /bin/bash -c "source /home/ubuntu/ros2_ws/.hiwonderrc; export ROS_LOCALHOST_ONLY=0; export MACHINE_TYPE=MentorPi_Tank; export DEPTH_CAMERA_TYPE=aurora; if [ -f /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash ]; then source /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash; fi; source /home/ubuntu/mentorpi_t1_ws/install/setup.bash; exec ros2 launch mentorpi_bringup stage1.launch.py"
+# Container PID 1 is tail -f: stopping docker exec leaves ROS nodes (and last
+# motor RPS on STM32). t1-stop: SIGTERM launch, wait, then T1 UART init+zero
+# on the freed /dev/rrc (must not run beside ros_robot_controller).
+ExecStop=-/usr/bin/docker exec -u ubuntu mentorpi-t1 /home/ubuntu/mentorpi_t1_ws/install/mentorpi_bringup/lib/mentorpi_bringup/t1-stop
+# t1-stop waits for each stage and then writes motor zeros on the freed serial.
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

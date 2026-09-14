@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — help</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="help">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — help</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl --help; stdout; exit: 0; lang: en; roles: bold=headers, muted=descriptions; stack: Clap"><span class="prompt">$</span> <span class="cmd">t1ctl --help</span>
+t1ctl  0.1.0
+<span class="bold">USAGE</span>
+  t1ctl [command]
+<span class="bold">COMMANDS</span>
+  status     <span class="fg-muted">print status (default)</span>
+  start      <span class="fg-muted">start demo</span>
+  restart    <span class="fg-muted">restart demo</span>
+  stock      <span class="fg-muted">restore stock autostart</span>
+<span class="bold">STATUS</span>
+  demo        active          <span class="fg-muted">mentorpi-t1.service is running</span>
+              inactive        <span class="fg-muted">mentorpi-t1.service is down</span>
+              failed          <span class="fg-muted">start or restart failed</span>
+  stock       inactive        <span class="fg-muted">start_node.service is off</span>
+              active          <span class="fg-muted">start_node.service is on</span>
+  chassis     active          <span class="fg-muted">/vehicle/status echo succeeded</span>
+              inactive        <span class="fg-muted">container down or no /vehicle/status</span>
+  mode        follow          <span class="fg-muted">person follow is selected</span>
+              manual          <span class="fg-muted">operator pad is selected</span>
+  remote      active          <span class="fg-muted">pad receiver has a link</span>
+              inactive        <span class="fg-muted">no pad link</span>
+  version     0.1.0           <span class="fg-muted">t1ctl package version</span>
+<span class="bold">FLAGS</span>
+  -h, --help     <span class="fg-muted">this help</span>    -V, --version  <span class="fg-muted">print version</span></pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

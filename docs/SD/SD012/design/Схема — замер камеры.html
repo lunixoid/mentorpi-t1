@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Схема — замер камеры</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact.diagram .artboard { background: var(--bg); }
+  .diagram-board {
+    margin: 0;
+    flex: 1;
+    padding: 12px 16px 8px;
+    overflow: hidden;
+  }
+  .diagram-board svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .diagram-caption {
+    flex: none;
+    padding: 0 16px 10px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body class="artifact diagram">
+  <div class="stage">
+    <div class="artboard" data-screen-label="measure-camera">
+      <div class="term-chrome">
+        <span class="term-title">замер — камера Aurora 930</span>
+        <span class="term-meta">бок, нос вправо</span>
+      </div>
+      <div class="diagram-board">
+        <svg viewBox="0 0 920 520" xmlns="http://www.w3.org/2000/svg" aria-label="Замер высоты камеры">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 Z" fill="#B33A1A"/>
+            </marker>
+          </defs>
+          <line x1="40" y1="420" x2="880" y2="420" stroke="#241E16" stroke-width="3"/>
+          <text x="48" y="448" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="16">пол (гусеницы)</text>
+
+          <rect x="140" y="372" width="400" height="48" fill="#D8CEB6" stroke="#241E16" stroke-width="2"/>
+          <rect x="160" y="292" width="340" height="80" fill="#E9E1CC" stroke="#241E16" stroke-width="2"/>
+          <text x="190" y="340" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="16">корпус</text>
+
+          <!-- mast -->
+          <rect x="470" y="210" width="18" height="82" fill="#D8CEB6" stroke="#241E16" stroke-width="2"/>
+
+          <!-- camera body pitched up ~15 deg around C -->
+          <g transform="translate(560 230) rotate(-18)">
+            <rect x="-70" y="-28" width="140" height="56" fill="#E9E1CC" stroke="#241E16" stroke-width="2"/>
+            <rect x="40" y="-16" width="22" height="32" fill="#D8CEB6" stroke="#241E16" stroke-width="1.5"/>
+            <text x="-58" y="6" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">depth</text>
+          </g>
+          <circle cx="560" cy="230" r="7" fill="#3F4F20" stroke="#241E16" stroke-width="1.5"/>
+          <text x="578" y="224" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="18" font-weight="700">C</text>
+          <text x="578" y="246" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">центр окна глубины</text>
+
+          <!-- wrong axis (optical) as dashed muted -->
+          <line x1="560" y1="230" x2="720" y2="175" stroke="#6A6356" stroke-width="1.5" stroke-dasharray="6 5"/>
+          <text x="628" y="168" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="13">не вдоль оси</text>
+
+          <!-- vertical height -->
+          <line x1="800" y1="230" x2="800" y2="420" stroke="#B33A1A" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+          <text x="812" y="328" fill="#B33A1A" font-family="'Red Hat Mono', monospace" font-size="18" font-weight="700">H</text>
+          <text x="812" y="350" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">--height, м</text>
+          <text x="812" y="372" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">вертикаль</text>
+
+          <text x="800" y="400" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">нос →</text>
+
+          <text x="48" y="64" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="16">Не мерить: RGB-линза, верх корпуса, кронштейн.</text>
+          <text x="48" y="88" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="16">Наклон камеры вводит этап corner, не эта команда.</text>
+        </svg>
+      </div>
+      <div class="diagram-caption">Точка C — центр переднего окна depth. Высота — вертикаль от пола, даже если камера задрана вверх. docs/SD/SD012/measure.md</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

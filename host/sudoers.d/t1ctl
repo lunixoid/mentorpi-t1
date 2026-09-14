@@ -1,0 +1,33 @@
+# t1ctl (SD002): passwordless systemctl for user pi, two units only.
+#
+# Install (must be 0440, owner root:root; visudo before copy):
+#   sudo visudo -cf host/sudoers.d/t1ctl
+#   sudo install -m 0440 -o root -g root host/sudoers.d/t1ctl /etc/sudoers.d/t1ctl
+#   sudo visudo -cf /etc/sudoers.d/t1ctl
+#
+# Filename has no dot: sudo ignores /etc/sudoers.d files whose names contain a dot.
+# Commands match t1ctl argv (sudo systemctl VERB [--quiet] UNIT) on Debian 12.
+
+Cmnd_Alias T1CTL_OURS = \
+    /usr/bin/systemctl start mentorpi-t1.service, \
+    /usr/bin/systemctl stop mentorpi-t1.service, \
+    /usr/bin/systemctl restart mentorpi-t1.service, \
+    /usr/bin/systemctl enable mentorpi-t1.service, \
+    /usr/bin/systemctl disable mentorpi-t1.service, \
+    /usr/bin/systemctl is-active mentorpi-t1.service, \
+    /usr/bin/systemctl is-active --quiet mentorpi-t1.service, \
+    /usr/bin/systemctl is-failed mentorpi-t1.service, \
+    /usr/bin/systemctl is-failed --quiet mentorpi-t1.service
+
+Cmnd_Alias T1CTL_STOCK = \
+    /usr/bin/systemctl start start_node.service, \
+    /usr/bin/systemctl stop start_node.service, \
+    /usr/bin/systemctl restart start_node.service, \
+    /usr/bin/systemctl enable start_node.service, \
+    /usr/bin/systemctl disable start_node.service, \
+    /usr/bin/systemctl is-active start_node.service, \
+    /usr/bin/systemctl is-active --quiet start_node.service, \
+    /usr/bin/systemctl is-failed start_node.service, \
+    /usr/bin/systemctl is-failed --quiet start_node.service
+
+pi ALL=(root) NOPASSWD: T1CTL_OURS, T1CTL_STOCK

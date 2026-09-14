@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Tear down stage1 ROS nodes inside mentorpi-t1 and leave motors at T1 halt.
+# Called from systemd ExecStop (absolute path, no ROS env available).
+#
+# Killing processes is not a stop: STM32 keeps the last RPS. After every
+# writer is gone we own /dev/rrc and send stock T1 init+zero (type x2,
+# battery, full zero frames). Topic +0.0 is not a physical stop.
+# Must not run this UART writer in parallel with ros_robot_controller.
+set -u
+
+LAUNCH='ros2 launch mentorpi_bringup'
+# Every node launch started carries --ros-args; this script does not, so the
+# sweep cannot kill itself. -- keeps pkill from reading it as an option.
+NODES='--ros-args'
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+wait_gone() {
+  for _ in $(seq 1 "$2"); do
+    pgrep -u ubuntu -f -- "$1" >/dev/null 2>&1 || return 0
+    sleep 0.1
+  done
+  return 1
+}
+
+# 1. Launch first so it stops respawning children, then every node it leaves
+#    behind. SIGINT is not enough for ros_robot_controller (its handler calls
+#    rclpy.shutdown() but the process stays up), so escalate.
+pkill -TERM -u ubuntu -f -- "${LAUNCH}" >/dev/null 2>&1 || true
+wait_gone "${LAUNCH}" 50
+pkill -TERM -u ubuntu -f -- "${NODES}" >/dev/null 2>&1 || true
+wait_gone "${NODES}" 30
+pkill -KILL -u ubuntu -f -- "${NODES}" >/dev/null 2>&1 || true
+wait_gone "${NODES}" 20
+# Explicit RRC kill: --ros-args sweep can miss a stuck controller, and
+# skipping UART halt then leaves STM32 at last RPS.
+pkill -KILL -u ubuntu -f -- 'ros_robot_controller' >/dev/null 2>&1 || true
+wait_gone 'ros_robot_controller' 20
+
+# 2. Sole serial owner. RRC must be gone; do not open /dev/rrc while it lives.
+if pgrep -u ubuntu -f -- 'ros_robot_controller' >/dev/null 2>&1; then
+  echo 't1-stop: ros_robot_controller still alive, skip UART halt' >&2
+  exit 0
+fi
+
+python3 "${HERE}/t1-uart-halt" || echo 't1-stop: UART halt failed' >&2
+exit 0

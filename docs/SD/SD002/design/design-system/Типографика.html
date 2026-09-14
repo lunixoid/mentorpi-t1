@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Типографика — t1ctl</title>
+<link rel="stylesheet" href="tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="типографика">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — типографика</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; font: Red Hat Mono 400/700; dim=muted; ligatures: off"><span class="prompt">$</span> <span class="cmd">t1ctl --help</span>
+Red Hat Mono regular 20/24  ABC abc 012  контур T1
+<span class="bold">Red Hat Mono bold    20/24  USAGE FLAGS  жив</span>
+<span class="dim">dim = muted, тот же кегль   hiwonder удержан</span>
+<span class="prompt">$</span> промпт accent 500     <span class="cmd">t1ctl start</span>
+
+<span class="bold">USAGE</span>
+  t1ctl [command]
+
+<span class="bold">KV</span>
+<span class="fg-muted">контур      </span><span class="fg-ok">жив</span>
+<span class="fg-muted">hiwonder    </span>удержан
+<span class="fg-muted">шасси       </span>стоит
+<span class="fg-muted">следование  </span>нет в этом образе
+
+<span class="bold">COMMAND  NOTE</span>
+<span class="fg-muted">  start     поднять контур; робот стоит</span>
+  status    без аргументов — то же</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

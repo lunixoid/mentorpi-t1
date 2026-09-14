@@ -1,0 +1,108 @@
+/* Дизайн-система CLI — Трак T1 (t1ctl) */
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Mono:wght@400;500;700&display=swap&subset=cyrillic');
+
+:root {
+  /* Сетка — явные px для capture_preview.py */
+  --cols: 80;
+  --rows: 24;
+  --cell-w: 12px;
+  --cell-h: 24px;
+  --chrome-h: 36px;
+  --artboard-w: 960px;
+  --artboard-h: 612px;
+
+  /* Роли. warn = accent, info = fg — без лишних hue */
+  --bg:     #E9E1CC;
+  --fg:     #241E16;
+  --muted:  #6A6356;
+  --accent: #B33A1A;
+  --ok:     #3F4F20;
+  --warn:   #B33A1A;
+  --err:    #8C1E2E;
+  --info:   #241E16;
+  --border: #B7AD96;
+  --chrome-bg: #D8CEB6;
+  --chrome-fg: #241E16;
+
+  --font-mono: 'Red Hat Mono', ui-monospace, monospace;
+  --term-font-size: 20px;
+}
+
+* { box-sizing: border-box; }
+
+body.artifact {
+  margin: 0;
+  background: var(--chrome-bg);
+  font-family: var(--font-mono);
+  color: var(--fg);
+  overflow: hidden;
+}
+
+.stage {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: var(--chrome-bg);
+}
+
+.artboard {
+  width: var(--artboard-w);
+  height: var(--artboard-h);
+  position: relative;
+  background: var(--bg);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.term-chrome {
+  height: var(--chrome-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  font-size: 12px;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--border);
+}
+
+.term-title { font-weight: 500; }
+.term-meta { color: var(--muted); }
+
+.term {
+  margin: 0;
+  flex: none;
+  width: calc(var(--cols) * var(--cell-w));
+  height: calc(var(--rows) * var(--cell-h));
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--term-font-size);
+  font-weight: 400;
+  line-height: var(--cell-h);
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.prompt { color: var(--accent); font-weight: 500; }
+.cmd    { color: var(--fg); }
+.dim    { color: var(--muted); }
+.bold   { font-weight: 700; }
+
+.fg-accent { color: var(--accent); }
+.fg-ok     { color: var(--ok); }
+.fg-warn   { color: var(--warn); }
+.fg-err    { color: var(--err); }
+.fg-info   { color: var(--info); }
+.fg-muted  { color: var(--muted); }
+
+.bg-accent { background: var(--accent); color: var(--bg); }
+.bg-err    { background: var(--err); color: var(--bg); }
+.bg-ok     { background: var(--ok); color: var(--bg); }

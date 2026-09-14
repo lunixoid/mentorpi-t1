@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — статус норма</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="status-follow">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — status</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl status; stdout; exit: 0; state: AutoFollow; lang: en; roles: muted=keys, ok=active; mode: follow uncolored; stack: Clap; version: 1.4.0"><span class="prompt">$</span> <span class="cmd">t1ctl status</span>
+<span class="fg-muted">demo              </span><span class="fg-ok">active</span>
+<span class="fg-muted">stock             </span>inactive
+<span class="fg-muted">chassis           </span><span class="fg-ok">active</span>
+<span class="fg-muted">mode              </span>follow
+<span class="fg-muted">remote controller </span><span class="fg-ok">active</span>
+<span class="fg-muted">lidar             </span><span class="fg-ok">active</span>
+<span class="fg-muted">camera            </span><span class="fg-ok">active</span>
+<span class="fg-muted">imu               </span><span class="fg-ok">active</span>
+<span class="fg-muted">odometry          </span><span class="fg-ok">active</span>
+<span class="fg-muted">platform model    </span><span class="fg-ok">active</span>
+<span class="fg-muted">version           </span>1.4.0</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — калибровка угол оси</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="calib-corner-axis-swap">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — calib corner</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl calib corner; stdout; exit: 0; cause: axis swap; lang: en; stack: Clap; version: 1.4.1"><span class="prompt">$</span> <span class="cmd">t1ctl calib corner</span>
+<span class="fg-muted">stage             </span>corner
+<span class="fg-muted">cause             </span>axis swap
+<span class="fg-muted">residual          </span>0.42 m / 87 deg -> 0.04 m / 2 deg
+<span class="fg-muted">lidar yaw         </span>180.0 -> 0.0 deg
+<span class="fg-muted">camera x          </span>0.100 -> 0.098 m
+<span class="fg-muted">camera y          </span>0.000 -> 0.006 m
+
+  t1ctl calib accept
+  t1ctl calib reject</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — ошибка</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="error">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — error</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl start; stderr: error block; stdout: kv; exit: 1; state: error; lang: en; roles: err=failed, muted=keys; stack: Clap"><span class="prompt">$</span> <span class="cmd">t1ctl start</span>
+<span class="fg-muted">demo        </span><span class="fg-err">failed</span>
+<span class="fg-muted">stock       </span>inactive
+<span class="fg-muted">version     </span>0.1.0
+
+<span class="fg-err">error:</span> demo start failed
+
+  t1ctl start
+  t1ctl stock</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

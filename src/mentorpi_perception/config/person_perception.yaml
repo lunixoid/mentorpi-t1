@@ -1,0 +1,34 @@
+# SD013 I1 / SD014 I4 / SD016 I2: parameters for person_perception.
+# Geometry and NN are not started from this file.
+/**:
+  ros__parameters:
+    detections_source: mac
+    detections_topic: /perception/detections_2d
+    onboard_detections_topic: /perception/detections_2d_onboard
+    points_topic: /aurora/points2
+    rgb_topic: /aurora/rgb/image_raw
+    base_frame: base_footprint
+    depth_frame: depth_camera_link
+    rate_hz: 10.0
+    detections_timeout_ms: 1000
+    # Mac (SD024): depth ~2.15 Hz; 700 ms rejects a two-frame-old pose. Not an SLA.
+    points_timeout_ms: 700
+    # Offline NCNN can stall points2; used while detections_source=offline (SD027).
+    points_timeout_offline_ms: 1000
+    switch_margin_m: 0.30
+    target_lost_s: 2.0
+    challenger_dwell_s: 2.0
+    # SD028; 0.0 — выключено; не SLA. В Humble не целое 0.
+    handover_radius_m: 0.7
+    # SD030: rotate detection bbox by robot yaw between frame and cloud stamps.
+    # ego_max_age_s: bbox age p90 0.55 s on stand; ego_max_yaw_rad: max turn ~25 deg; not SLA.
+    ego_compensation_enabled: true
+    ego_max_age_s: 1.0
+    ego_max_yaw_rad: 0.6
+    odom_frame: odom
+    publish_overlay: false
+    ethernet_ping_host: 192.168.88.57
+    ethernet_ping_period_s: 2.0
+    ethernet_ping_fail_threshold: 3
+    ethernet_ip: 192.168.88.56
+    wifi_ap_ip: 192.168.149.1

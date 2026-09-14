@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — калибровка сохранение</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="calib-save">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — calib save</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl calib save; stdout; exit: 0; live after restart; lang: en; stack: Clap; version: 1.4.1"><span class="prompt">$</span> <span class="cmd">t1ctl calib save</span>
+<span class="fg-muted">camera z          </span>0.177 -> 0.172 m        floor
+<span class="fg-muted">camera pitch      </span>0.0 -> 2.4 deg          floor
+<span class="fg-muted">lidar yaw         </span>180.0 -> 2.4 deg        corner
+<span class="fg-muted">lidar z           </span>0.168 -> 0.170 m        measured
+<span class="fg-muted">imu pitch         </span>0.0 -> -4.1 deg         floor
+<span class="fg-muted">imu yaw sign      </span>ok                      drive
+Calibration saved.
+<span class="fg-muted">live              </span>after restart
+
+  t1ctl restart</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

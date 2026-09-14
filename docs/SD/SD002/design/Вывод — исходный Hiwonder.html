@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — исходный Hiwonder</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="stock">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — stock</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl stock; stdout; exit: 0; state: stock; lang: en; roles: muted=keys"><span class="prompt">$</span> <span class="cmd">t1ctl stock</span>
+Restored stock autostart.
+
+<span class="fg-muted">demo        </span>inactive
+<span class="fg-muted">stock       </span>active
+<span class="fg-muted">version     </span>0.1.0</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

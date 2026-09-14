@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — help</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+
+<style>
+  :root {
+    --rows: 67;
+    --artboard-h: 1644px;
+  }
+</style>
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="help">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — help</span>
+        <span class="term-meta">80×67</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 67; command: t1ctl --help; stdout; exit: 0; lang: en; roles: bold=headers, muted=descriptions; stack: Clap; version: 1.4.1"><span class="prompt">$</span> <span class="cmd">t1ctl --help</span>
+t1ctl  1.4.1
+<span class="bold">USAGE</span>
+  t1ctl [command]
+<span class="bold">COMMANDS</span>
+  status     <span class="fg-muted">print status (default)</span>
+  start      <span class="fg-muted">start demo</span>
+  restart    <span class="fg-muted">restart demo</span>
+  stock      <span class="fg-muted">restore stock autostart</span>
+  viewer     <span class="fg-muted">Foxglove bridge lifecycle</span>
+  mode       <span class="fg-muted">set control mode</span>
+  calib      <span class="fg-muted">sensor extrinsics</span>
+<span class="bold">VIEWER</span>
+  viewer status     <span class="fg-muted">check bridge and print Mac connection</span>
+  viewer start      <span class="fg-muted">start read-only bridge</span>
+  viewer stop       <span class="fg-muted">stop bridge without stopping demo</span>
+<span class="bold">MODE</span>
+  mode forbid       <span class="fg-muted">hold motion (Forbidden)</span>
+  mode allow        <span class="fg-muted">release hold, return to follow</span>
+  mode manual       <span class="fg-muted">select operator pad</span>
+<span class="bold">CALIB</span>
+  calib status      <span class="fg-muted">print live poses and residual</span>
+  calib corner      <span class="fg-muted">camera to lidar at a corner</span>
+  calib drive       <span class="fg-muted">lidar yaw from a pad run</span>
+  calib lidar       <span class="fg-muted">enter lidar height and tilt</span>
+                    <span class="fg-muted">--height M --pitch DEG --roll DEG</span>
+  calib camera      <span class="fg-muted">enter camera height</span>
+                    <span class="fg-muted">--height M</span>
+  calib accept      <span class="fg-muted">keep last stage as draft</span>
+  calib reject      <span class="fg-muted">drop last stage</span>
+  calib save        <span class="fg-muted">write file; live after restart</span>
+  calib abort       <span class="fg-muted">drop draft; file unchanged</span>
+<span class="bold">STATUS</span>
+  demo              active          <span class="fg-muted">mentorpi-t1.service is running</span>
+                    inactive        <span class="fg-muted">mentorpi-t1.service is down</span>
+                    failed          <span class="fg-muted">start or restart failed</span>
+  stock             inactive        <span class="fg-muted">start_node.service is off</span>
+                    active          <span class="fg-muted">start_node.service is on</span>
+  chassis           active          <span class="fg-muted">/vehicle/status echo succeeded</span>
+                    inactive        <span class="fg-muted">container down or no /vehicle/status</span>
+  mode              follow          <span class="fg-muted">person follow is selected</span>
+                    manual          <span class="fg-muted">operator pad is selected</span>
+                    forbidden       <span class="fg-muted">motion held; chassis zeros</span>
+  reason            operator        <span class="fg-muted">host command t1ctl mode forbid</span>
+                    (topic)         <span class="fg-muted">critical contour signal missing</span>
+  remote controller active          <span class="fg-muted">pad receiver has a link</span>
+                    inactive        <span class="fg-muted">no pad link</span>
+  lidar             active          <span class="fg-muted">/scan echo and lidar_frame TF ready</span>
+                    degraded        <span class="fg-muted">demo up but scan or TF missing</span>
+                    inactive        <span class="fg-muted">container down or probe skipped</span>
+  camera            active          <span class="fg-muted">color, depth, depth_camera_link TF ready</span>
+                    degraded        <span class="fg-muted">demo up but color, depth, or TF missing</span>
+                    inactive        <span class="fg-muted">container down or probe skipped</span>
+  imu               active          <span class="fg-muted">/imu, /imu_odom, and imu_link TF ready</span>
+                    degraded        <span class="fg-muted">demo up but IMU, odom, or TF missing</span>
+                    inactive        <span class="fg-muted">container down or probe skipped</span>
+  odometry          active          <span class="fg-muted">/odom_raw and odom TF ready</span>
+                    degraded        <span class="fg-muted">demo up but /odom_raw or TF missing</span>
+                    inactive        <span class="fg-muted">container down or probe skipped</span>
+  platform model    active          <span class="fg-muted">/robot_description and model TF ready</span>
+                    degraded        <span class="fg-muted">demo up but description or TF missing</span>
+                    inactive        <span class="fg-muted">container down or probe skipped</span>
+  calibration       factory         <span class="fg-muted">poses from the platform model</span>
+                    file            <span class="fg-muted">saved file applied at start</span>
+                    unused          <span class="fg-muted">file present but not applied</span>
+  version           1.4.1           <span class="fg-muted">t1ctl package version</span>
+<span class="bold">FLAGS</span>
+  -h, --help     <span class="fg-muted">this help</span>    -V, --version  <span class="fg-muted">print version</span></pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 1644;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

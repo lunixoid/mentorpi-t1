@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Схема — замер лидара</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+<style>
+  body.artifact.diagram .artboard { background: var(--bg); }
+  .diagram-board {
+    margin: 0;
+    flex: 1;
+    padding: 12px 16px 8px;
+    overflow: hidden;
+  }
+  .diagram-board svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .diagram-caption {
+    flex: none;
+    padding: 0 16px 10px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body class="artifact diagram">
+  <div class="stage">
+    <div class="artboard" data-screen-label="measure-lidar">
+      <div class="term-chrome">
+        <span class="term-title">замер — лидар LD19</span>
+        <span class="term-meta">бок, нос вправо</span>
+      </div>
+      <div class="diagram-board">
+        <svg viewBox="0 0 920 520" xmlns="http://www.w3.org/2000/svg" aria-label="Замер высоты и наклона лидара">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 8 5 L 0 8.5 Z" fill="#B33A1A"/>
+            </marker>
+          </defs>
+          <!-- floor -->
+          <line x1="40" y1="420" x2="880" y2="420" stroke="#241E16" stroke-width="3"/>
+          <text x="48" y="448" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="16">пол (гусеницы)</text>
+
+          <!-- tracks / chassis -->
+          <rect x="160" y="372" width="420" height="48" fill="#D8CEB6" stroke="#241E16" stroke-width="2"/>
+          <rect x="180" y="300" width="360" height="72" fill="#E9E1CC" stroke="#241E16" stroke-width="2"/>
+          <text x="210" y="342" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="16">корпус</text>
+
+          <!-- lidar cylinder -->
+          <ellipse cx="620" cy="268" rx="42" ry="18" fill="#E9E1CC" stroke="#241E16" stroke-width="2"/>
+          <rect x="578" y="200" width="84" height="68" fill="#E9E1CC" stroke="#241E16" stroke-width="2"/>
+          <ellipse cx="620" cy="200" rx="42" ry="18" fill="#D8CEB6" stroke="#241E16" stroke-width="2"/>
+          <!-- optical window / scan plane -->
+          <line x1="578" y1="248" x2="662" y2="248" stroke="#B33A1A" stroke-width="3"/>
+          <circle cx="620" cy="248" r="6" fill="#3F4F20" stroke="#241E16" stroke-width="1.5"/>
+          <text x="676" y="242" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="18" font-weight="700">L</text>
+          <text x="676" y="264" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">плоскость скана</text>
+          <text x="676" y="198" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">крышка — не мерить</text>
+
+          <!-- height dimension -->
+          <line x1="760" y1="248" x2="760" y2="420" stroke="#B33A1A" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+          <text x="772" y="340" fill="#B33A1A" font-family="'Red Hat Mono', monospace" font-size="18" font-weight="700">H</text>
+          <text x="772" y="362" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">--height, м</text>
+
+          <!-- nose -->
+          <text x="800" y="400" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="14">нос →</text>
+
+          <!-- pitch inset -->
+          <rect x="40" y="40" width="280" height="150" fill="#E9E1CC" stroke="#B7AD96" stroke-width="1"/>
+          <text x="52" y="64" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="16" font-weight="700">pitch</text>
+          <line x1="70" y1="150" x2="280" y2="150" stroke="#6A6356" stroke-width="1"/>
+          <line x1="90" y1="150" x2="250" y2="100" stroke="#B33A1A" stroke-width="2"/>
+          <circle cx="170" cy="125" r="4" fill="#3F4F20"/>
+          <text x="52" y="178" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="13">перед выше зада = +</text>
+
+          <rect x="340" y="40" width="280" height="150" fill="#E9E1CC" stroke="#B7AD96" stroke-width="1"/>
+          <text x="352" y="64" fill="#241E16" font-family="'Red Hat Mono', monospace" font-size="16" font-weight="700">roll</text>
+          <ellipse cx="480" cy="120" rx="70" ry="28" fill="none" stroke="#241E16" stroke-width="2"/>
+          <line x1="420" y1="108" x2="540" y2="132" stroke="#B33A1A" stroke-width="2"/>
+          <text x="352" y="178" fill="#6A6356" font-family="'Red Hat Mono', monospace" font-size="13">правый борт ниже = +</text>
+        </svg>
+      </div>
+      <div class="diagram-caption">Точка L — середина оптического окна. Вертикаль от пола. Единицы: метры и градусы, без суффикса. docs/SD/SD012/measure.md</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

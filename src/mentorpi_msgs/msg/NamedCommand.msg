@@ -1,0 +1,3 @@
+# SD031: именованная команда; поведение выбирает command_dispatcher.
+string name    # mode_forbid | mode_follow | mode_manual
+string source  # кто прислал: voice, test, ...

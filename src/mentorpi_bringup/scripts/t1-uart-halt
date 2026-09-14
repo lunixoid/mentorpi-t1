@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""After RRC has released /dev/rrc: T1 motor-type, battery, full zero frames.
+
+Must not run in parallel with ros_robot_controller. No ROS. No Twist.
+"""
+from __future__ import annotations
+
+import glob
+import sys
+import time
+from pathlib import Path
+
+DEVICE = "/dev/rrc"
+BAUD = 1000000
+ZERO_REPEATS = 3
+
+
+def _prepend_overlay_site_packages() -> None:
+    here = Path(__file__).resolve()
+    # install/mentorpi_bringup/lib/mentorpi_bringup/<script> -> install/
+    for parent in here.parents:
+        if parent.name == "install":
+            for site in parent.glob("ros_robot_controller/lib/python3.*/site-packages"):
+                sys.path.insert(0, str(site))
+            break
+    sys.path.insert(
+        0,
+        "/home/ubuntu/mentorpi_t1_ws/install/ros_robot_controller/" "lib/python3.10/site-packages",
+    )
+    for site in glob.glob("/home/ubuntu/mentorpi_t1_ws/install/ros_robot_controller/" "lib/python3.*/site-packages"):
+        sys.path.insert(0, site)
+
+
+def main() -> int:
+    _prepend_overlay_site_packages()
+    from ros_robot_controller.t1_protocol import frames_hex, t1_init_frames
+
+    frames = t1_init_frames(zero_repeats=ZERO_REPEATS)
+    print(
+        "T1 uart-halt frames=%d hex=%s" % (len(frames), ",".join(frames_hex(frames))),
+        flush=True,
+    )
+    try:
+        import serial
+    except ImportError:
+        print("t1-uart-halt: pyserial missing", file=sys.stderr)
+        return 1
+    try:
+        port = serial.Serial()
+        port.port = DEVICE
+        port.baudrate = BAUD
+        port.timeout = 1
+        port.dtr = False
+        port.rts = False
+        port.open()
+        for frame in frames:
+            port.write(frame)
+            port.flush()
+            time.sleep(0.05)
+        time.sleep(0.1)
+        port.close()
+    except Exception as exc:
+        print("t1-uart-halt: %s" % exc, file=sys.stderr)
+        return 1
+    print("T1 uart-halt wrote type x2, battery 0x1af4, %d full zeros" % ZERO_REPEATS)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="mentorpi_t1" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--
+    MentorPi T1 platform model (SD007 T1).
+    Adapted from hiwonder_description tank + common sensor meshes.
+    No manipulator branch; no runtime dependency on hiwonder_description.
+
+    Depth camera, lidar and IMU mount poses are parameterized below.
+    Defaults mirror the current factory origin in each sensor xacro.
+    Optical children (lidar_frame, depth_camera_link) stay in those
+    xacro files and are not calibration arguments (F24 / SD012).
+  -->
+  <xacro:arg name="lidar_x" default="0.0900034859353204"/>
+  <xacro:arg name="lidar_y" default="0.0"/>
+  <xacro:arg name="lidar_z" default="0.0405195774179554"/>
+  <xacro:arg name="lidar_roll" default="0.0"/>
+  <xacro:arg name="lidar_pitch" default="0.0"/>
+  <xacro:arg name="lidar_yaw" default="0.0"/>
+  <xacro:arg name="imu_x" default="0.0048416"/>
+  <xacro:arg name="imu_y" default="0.011168"/>
+  <xacro:arg name="imu_z" default="-0.0057398"/>
+  <xacro:arg name="imu_roll" default="3.1415926535897931"/>
+  <xacro:arg name="imu_pitch" default="0.0"/>
+  <xacro:arg name="imu_yaw" default="-1.5707963267948966"/>
+  <xacro:arg name="depth_cam_x" default="0.10"/>
+  <xacro:arg name="depth_cam_y" default="0.0"/>
+  <xacro:arg name="depth_cam_z" default="0.05"/>
+  <xacro:arg name="depth_cam_roll" default="0.0"/>
+  <xacro:arg name="depth_cam_pitch" default="0.0"/>
+  <xacro:arg name="depth_cam_yaw" default="0.0"/>
+
+  <xacro:include filename="$(find mentorpi_description)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/inertial_matrix.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/car_tank.urdf.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/common.urdf.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/lidar.urdf.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/lidar_frame.urdf.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/imu.urdf.xacro"/>
+  <xacro:include filename="$(find mentorpi_description)/urdf/depth_camera.urdf.xacro"/>
+</robot>

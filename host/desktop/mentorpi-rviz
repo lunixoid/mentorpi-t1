@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DISPLAY=${DISPLAY:-:0}
+export DISPLAY
+
+if [[ "$(docker inspect -f '{{.State.Running}}' mentorpi-t1 2>/dev/null || true)" != "true" ]]; then
+  echo "mentorpi-rviz: mentorpi-t1 container is not running" >&2
+  exit 1
+fi
+
+xhost +local: 2>/dev/null || true
+
+docker exec -d \
+  -e DISPLAY \
+  -e QT_X11_NO_MITSHM=1 \
+  -e LIBGL_ALWAYS_SOFTWARE=1 \
+  -u ubuntu \
+  -w /home/ubuntu \
+  mentorpi-t1 \
+  /bin/bash -lc 'source /home/ubuntu/ros2_ws/.hiwonderrc; export ROS_LOCALHOST_ONLY=0; export MACHINE_TYPE=MentorPi_Tank; export DEPTH_CAMERA_TYPE=aurora; if [ -f /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash ]; then source /home/ubuntu/third_party_ros2/third_party_ws/install/deptrum-ros-driver-aurora930/local_setup.bash; fi; source /home/ubuntu/mentorpi_t1_ws/install/setup.bash; rviz2 -d "$(ros2 pkg prefix mentorpi_bringup)/share/mentorpi_bringup/rviz/demo.rviz"'

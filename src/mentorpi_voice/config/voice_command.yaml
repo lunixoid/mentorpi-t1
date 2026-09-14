@@ -1,0 +1,25 @@
+# SD031 I6: parameters for voice_command.
+/**:
+  ros__parameters:
+    capture_device: "plughw:CARD=Device,DEV=0"
+    sample_rate: 16000
+    capture_channels: 1
+    model_dir: ""
+    phrases:
+      - "режим запрет"
+      - "режим следование"
+      - "режим ручной"
+    commands:
+      - mode_forbid
+      - mode_follow
+      - mode_manual
+    states: [0, 2, 1]
+    min_confidence: 0.6
+    retry_ms: 1000
+    playback_device: "plughw:CARD=Device,DEV=0"
+    tts_command: "RHVoice-test"
+    tts_voice: "anna"
+    tts_cache_dir: "/tmp/mentorpi_voice"
+    announce_timeout_ms: 1000
+    pad_announce_window_ms: 1000
+    mute_tail_ms: 300

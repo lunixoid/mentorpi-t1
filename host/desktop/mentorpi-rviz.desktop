@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=MentorPi rviz
+Comment=Open rviz2 3D scene in mentorpi-t1 container
+Exec=/usr/local/bin/mentorpi-rviz
+Terminal=false

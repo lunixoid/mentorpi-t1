@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Вывод — режим разрешение</title>
+<link rel="stylesheet" href="design-system/tokens.css">
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="mode-allow">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — mode allow</span>
+        <span class="term-meta">80×24</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 24; command: t1ctl mode allow; stdout; exit: 0; from: forbidden; to: follow; lang: en; roles: muted=keys; stack: Clap; version: 1.4.0"><span class="prompt">$</span> <span class="cmd">t1ctl mode allow</span>
+Motion allowed.
+<span class="fg-muted">mode              </span>forbidden -> follow</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 612;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>

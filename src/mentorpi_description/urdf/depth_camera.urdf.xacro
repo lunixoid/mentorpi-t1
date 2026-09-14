@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="depth_camera" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="M_PI" value="3.1415926535897931"/>
+
+  <!--
+    Deptrum depth camera fixed on base_link (not arm-mounted).
+    Mount pose uses xacro args from mentorpi_t1.urdf.xacro; defaults are
+    preliminary only — stand verification required before calibration claims.
+  -->
+  <link name="depth_cam_link">
+    <inertial>
+      <origin xyz="0.00232981322860787 0.000387137406184821 -2.84059740606052E-05" rpy="0 0 0"/>
+      <mass value="0.015428"/>
+      <inertia
+        ixx="1.3945E-06"
+        ixy="-1.5684E-08"
+        ixz="-2.3104E-07"
+        iyy="1.2848E-05"
+        iyz="1.3156E-09"
+        izz="1.361E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mentorpi_description/meshes/depth_camera/depth_cam_link.STL"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://mentorpi_description/meshes/depth_camera/depth_cam_link_collision.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="depth_cam_joint" type="fixed">
+    <origin
+      xyz="$(arg depth_cam_x) $(arg depth_cam_y) $(arg depth_cam_z)"
+      rpy="$(arg depth_cam_roll) $(arg depth_cam_pitch) $(arg depth_cam_yaw)"/>
+    <parent link="base_link"/>
+    <child link="depth_cam_link"/>
+    <axis xyz="0 0 0"/>
+  </joint>
+
+  <!--
+    Optical child matches aurora930_node depth/cloud frame_id (SD008 T1).
+    rgb_camera_link is published by the driver (depth->rgb static TF) — do
+    not add a second source for that child here.
+  -->
+  <link name="depth_camera_link"/>
+
+  <joint name="depth_cam_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="${-M_PI/2} 0 ${-M_PI/2}"/>
+    <parent link="depth_cam_link"/>
+    <child link="depth_camera_link"/>
+  </joint>
+</robot>

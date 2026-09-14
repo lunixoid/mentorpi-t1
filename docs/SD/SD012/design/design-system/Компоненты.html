@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Компоненты — t1ctl calib</title>
+<link rel="stylesheet" href="tokens.css">
+
+<style>
+  :root {
+    --rows: 32;
+    --artboard-h: 804px;
+  }
+</style>
+</head>
+<body class="artifact cli">
+  <div class="stage">
+    <div class="artboard" data-screen-label="компоненты">
+      <div class="term-chrome">
+        <span class="term-title">t1ctl — компоненты</span>
+        <span class="term-meta">80×32</span>
+      </div>
+      <pre class="term" data-spec="cols: 80; rows: 32; roles: pose, delta, cause, unused, hold, error; version: 1.4.1"><span class="prompt">$</span> <span class="cmd">t1ctl calib</span>
+<span class="bold">POSE</span>
+<span class="fg-muted">camera xyz        </span> 0.100  0.000  0.177 m    factory
+<span class="fg-muted">lidar rpy         </span>   0.0    0.0  180.0 deg  factory
+
+<span class="bold">DELTA</span>
+<span class="fg-muted">lidar yaw         </span>180.0 -> 0.0 deg
+<span class="fg-muted">residual          </span>0.42 m / 87 deg -> 0.04 m / 2 deg
+
+<span class="bold">CAUSE / UNUSED</span>
+<span class="fg-muted">cause             </span>axis swap
+<span class="fg-muted">source            </span><span class="bold fg-err">unused</span>
+<span class="fg-muted">reason            </span>invalid file
+
+<span class="bold">HOLD</span>
+<span class="fg-muted">stage             </span>drive
+  <span class="fg-muted">you drive the pad; this command does not move the robot</span>
+<span class="fg-muted">travel            </span>0.4 m
+
+<span class="bold">ERROR</span>
+<span class="bold fg-err">error:</span> calib floor failed
+  no camera depth
+
+  t1ctl calib accept</pre>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var ab = document.querySelector('.artboard');
+      var W = 960, H = 804;
+      function fit() {
+        var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        ab.style.transform = 'scale(' + s + ')';
+        ab.style.transformOrigin = 'center center';
+      }
+      window.addEventListener('resize', fit);
+      fit();
+    })();
+  </script>
+</body>
+</html>
