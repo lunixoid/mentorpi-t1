@@ -220,6 +220,45 @@ void test_asr_block_matches_decimator() {
   expect(pipeline.last_asr_block() == expected, "asr block == Decimator(3)(mix_to_mono)");
 }
 
+// SD035: the stage sits before the mono mix and changes the block the recognizer sees.
+void test_dual_stage_changes_block() {
+  PipelineConfig config = base_config();
+  config.channels = 2;
+  config.dual = "coherence";
+  CommandPipeline pipeline(config, std::make_unique<FakeEngine>());
+  expect(std::string(pipeline.dual_name()) == "coherence" && pipeline.dual_error().empty(),
+         "coherence stage ready");
+
+  std::vector<int16_t> stereo(4800 * 2);
+  uint32_t state = 5;
+  for (auto& s : stereo) {
+    state = state * 1664525u + 1013904223u;
+    s = static_cast<int16_t>(state >> 16);
+  }
+  std::vector<PipelineEvent> events;
+  pipeline.feed(stereo.data(), 4800, events);
+
+  std::vector<int16_t> mono;
+  mix_to_mono(stereo.data(), 4800, 2, mono);
+  Decimator decimator(3);
+  std::vector<int16_t> half_sum;
+  decimator.process(mono.data(), mono.size(), half_sum);
+  expect(pipeline.last_asr_block().size() == half_sum.size(), "dual keeps the block size");
+  expect(pipeline.last_asr_block() != half_sum, "coherence changes the block");
+  expect(pipeline.take_timing().dual_ms > 0.0, "dual time is measured");
+}
+
+void test_dual_needs_two_channels() {
+  PipelineConfig config = base_config();
+  config.channels = 1;
+  config.dual = "nlms";
+  CommandPipeline pipeline(config, std::make_unique<FakeEngine>());
+  expect(std::string(pipeline.dual_name()) == "none" && !pipeline.dual_error().empty(),
+         "one channel -> none + error");
+  const auto events = run_silence(pipeline, 48000, 4800);
+  expect(events.empty(), "pipeline still runs on one channel");
+}
+
 void test_denoise_fallback() {
   PipelineConfig config = base_config();
   config.denoise = "bogus";
@@ -238,6 +277,8 @@ int main() {
   test_partial_trigger_off();
   test_asr_block_matches_decimator();
   test_denoise_fallback();
+  test_dual_stage_changes_block();
+  test_dual_needs_two_channels();
   if (g_fails != 0) {
     std::cerr << g_fails << " check(s) failed\n";
     return 1;

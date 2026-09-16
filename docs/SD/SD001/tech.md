@@ -165,6 +165,8 @@
   - **Границы:** wake-word, ASR, NLU и TTS этот SD не описывает. Штатный WonderEcho/LLM берём только как референс железа.
   - **Требования:**
     - [SD031/solution.md](../SD031/solution.md)
+    - [SD033/solution.md](../SD033/solution.md)
+    - [SD035/solution.md](../SD035/solution.md)
 
 - [ ] **F22. Диагностика и запись**
   - **Этап:** параллельно 1–2.
