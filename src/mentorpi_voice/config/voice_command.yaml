@@ -1,7 +1,9 @@
-# SD031 I6: parameters for voice_command.
+# SD031 I6, SD033 I2-I4: parameters for voice_command.
 /**:
   ros__parameters:
     capture_device: "plughw:CARD=Device,DEV=0"
+    # SD033: capture at capture_rate, FIR down to sample_rate (the Vosk rate).
+    capture_rate: 48000
     sample_rate: 16000
     capture_channels: 1
     model_dir: ""
@@ -16,6 +18,22 @@
     states: [0, 2, 1]
     min_confidence: 0.6
     retry_ms: 1000
+    # SD033 I3: denoise and command decision (values from the T4 bench, see tech.md As-built).
+    denoise: "speexdsp"
+    speex_noise_suppress_db: -30.0
+    partial_trigger: true
+    partial_stable_ms: 200
+    max_utterance_ms: 5000
+    # SD033 I4: capture gain; -1 leaves the mixer alone (no clipping in the T4 recordings).
+    mixer_device: "hw:CARD=Device"
+    capture_mixer_control: "Mic"
+    capture_gain_percent: -1
+    # SD033 D4: empty record_dir disables recording; on the stand use /home/ubuntu/shared/voice_rec.
+    record_dir: ""
+    record_segment_s: 300
+    record_max_mb: 500
+    publish_commands: true
+    stats_log_ms: 10000
     playback_device: "plughw:CARD=Device,DEV=0"
     tts_command: "RHVoice-test"
     tts_voice: "anna"

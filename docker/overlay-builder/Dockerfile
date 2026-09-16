@@ -72,4 +72,51 @@ RUN curl -fsSL -o /tmp/vosk.zip \
     && test -d "${VOSK_MODEL_DIR}/am" \
     && test -d "${VOSK_MODEL_DIR}/graph"
 
+# SD033 T2: RNNoise + SpeexDSP, static (PIC), for mentorpi_voice denoise. Separate layers so the
+# ncnn and Vosk layers above stay cached. RNNoise autogen.sh fetches its model with wget, which
+# reads only lowercase proxy variables. RNNoise is pinned to 372f7b4 ("Fix compilation errors.",
+# one day after tag v0.2): v0.2 itself fails on aarch64 with "vec_neon.h: os_support.h: No such file".
+ARG RNNOISE_GIT_COMMIT=372f7b4b76cde4ca1ec4605353dd17898a99de38
+ARG SPEEXDSP_GIT_TAG=SpeexDSP-1.2.1
+ENV RNNOISE_ROOT=/opt/rnnoise
+ENV SPEEXDSP_ROOT=/opt/speexdsp
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN if [ -n "${HTTP_PROXY:-}" ]; then export http_proxy="${HTTP_PROXY}"; fi \
+    && if [ -n "${HTTPS_PROXY:-}" ]; then export https_proxy="${HTTPS_PROXY}"; fi \
+    && mkdir -p /tmp/rnnoise \
+    && cd /tmp/rnnoise \
+    && git init -q \
+    && git remote add origin https://github.com/xiph/rnnoise.git \
+    && git fetch -q --depth 1 origin "${RNNOISE_GIT_COMMIT}" \
+    && git checkout -q FETCH_HEAD \
+    && ./autogen.sh \
+    && ./configure --prefix="${RNNOISE_ROOT}" --enable-static --disable-shared --with-pic \
+        --disable-examples --disable-doc \
+    && make -j"$(nproc)" \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/rnnoise \
+    && git clone --depth 1 --branch "${SPEEXDSP_GIT_TAG}" https://github.com/xiph/speexdsp.git /tmp/speexdsp \
+    && cd /tmp/speexdsp \
+    && ./autogen.sh \
+    && ./configure --prefix="${SPEEXDSP_ROOT}" --enable-static --disable-shared --with-pic \
+        --disable-examples \
+    && make -j"$(nproc)" \
+    && make install \
+    && cd / \
+    && rm -rf /tmp/speexdsp \
+    && test -f "${RNNOISE_ROOT}/lib/librnnoise.a" \
+    && test -f "${RNNOISE_ROOT}/include/rnnoise.h" \
+    && test -f "${SPEEXDSP_ROOT}/lib/libspeexdsp.a" \
+    && test -f "${SPEEXDSP_ROOT}/include/speex/speex_preprocess.h"
+
 WORKDIR /workspace

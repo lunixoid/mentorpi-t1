@@ -1,6 +1,7 @@
 #ifndef MENTORPI_VOICE_PHRASE_MATCH_HPP_
 #define MENTORPI_VOICE_PHRASE_MATCH_HPP_
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -98,18 +99,53 @@ inline std::string normalize_phrase(std::string_view text) {
   return out;
 }
 
-inline std::optional<size_t> match_phrase(std::string_view text,
-                                          const std::vector<std::string>& phrases) {
+// SD033 I5: words of the normalized text.
+inline std::vector<std::string> split_words(std::string_view text) {
   const std::string normalized = normalize_phrase(text);
-  if (normalized.find("[unk]") != std::string::npos) {
-    return std::nullopt;
+  std::vector<std::string> words;
+  size_t start = 0;
+  while (start < normalized.size()) {
+    size_t end = normalized.find(' ', start);
+    if (end == std::string::npos) {
+      end = normalized.size();
+    }
+    if (end > start) {
+      words.push_back(normalized.substr(start, end - start));
+    }
+    start = end + 1;
   }
-  for (size_t i = 0; i < phrases.size(); ++i) {
-    if (normalize_phrase(phrases[i]) == normalized) {
-      return i;
+  return words;
+}
+
+struct PhraseHit {
+  size_t phrase{0};
+  size_t first_word{0};
+  size_t word_count{0};
+};
+
+// SD033 I5: the earliest phrase whose words stand in `words` one after another. Anything may
+// surround it ([unk], other grammar words); a gap inside the phrase does not match. `words` must
+// be normalized (split_words or normalize_phrase per word).
+inline std::optional<PhraseHit> find_phrase(const std::vector<std::string>& words,
+                                            const std::vector<std::string>& phrases) {
+  std::optional<PhraseHit> best;
+  for (size_t p = 0; p < phrases.size(); ++p) {
+    const std::vector<std::string> phrase_words = split_words(phrases[p]);
+    if (phrase_words.empty() || phrase_words.size() > words.size()) {
+      continue;
+    }
+    for (size_t i = 0; i + phrase_words.size() <= words.size(); ++i) {
+      if (!std::equal(phrase_words.begin(), phrase_words.end(),
+                      words.begin() + static_cast<std::ptrdiff_t>(i))) {
+        continue;
+      }
+      if (!best.has_value() || i < best->first_word) {
+        best = PhraseHit{p, i, phrase_words.size()};
+      }
+      break;
     }
   }
-  return std::nullopt;
+  return best;
 }
 
 inline bool words_confident(const std::vector<double>& word_conf, double min_conf) {
