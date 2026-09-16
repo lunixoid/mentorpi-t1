@@ -1,6 +1,7 @@
 #ifndef MENTORPI_VOICE_COMMAND_PIPELINE_HPP_
 #define MENTORPI_VOICE_COMMAND_PIPELINE_HPP_
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,7 @@
 
 #include "mentorpi_voice/audio_dsp.hpp"
 #include "mentorpi_voice/denoiser.hpp"
+#include "mentorpi_voice/dual_channel.hpp"
 #include "mentorpi_voice/phrase_match.hpp"
 #include "mentorpi_voice/utterance.hpp"
 #include "vosk_api.h"
@@ -71,6 +73,9 @@ struct PipelineConfig {
   unsigned channels{1};
   std::string denoise{"none"};
   DenoiseOptions denoise_options;
+  // SD035 I5: stage over both capture channels, before the mono mix.
+  std::string dual{"none"};
+  DualOptions dual_options;
   bool partial_trigger{true};
   std::chrono::milliseconds partial_stable{200};
   std::chrono::milliseconds max_utterance{5000};
@@ -90,6 +95,7 @@ struct PipelineEvent {
 };
 
 struct PipelineTiming {
+  double dual_ms{0.0};
   double denoise_ms{0.0};
   double asr_ms{0.0};
   double audio_s{0.0};
@@ -108,13 +114,17 @@ class CommandPipeline {
     if (!engine_) {
       throw std::invalid_argument("CommandPipeline needs an AsrEngine");
     }
-    frame_ = config_.capture_rate / 100;
+    frame_ = std::max<size_t>(1, config_.capture_rate / 100);
     denoiser_ = make_denoiser(config_.denoise, config_.capture_rate, config_.denoise_options,
                               denoise_error_);
+    dual_ = make_dual_channel(config_.dual, config_.capture_rate, frame_, config_.channels,
+                              config_.dual_options, dual_error_);
   }
 
   const char* denoise_name() const { return denoiser_->name(); }
   const std::string& denoise_error() const { return denoise_error_; }
+  const char* dual_name() const { return dual_->name(); }
+  const std::string& dual_error() const { return dual_error_; }
   const std::vector<int16_t>& last_asr_block() const { return asr_block_; }
 
   void feed(const int16_t* interleaved, size_t frames, std::vector<PipelineEvent>& events) {
@@ -123,7 +133,22 @@ class CommandPipeline {
     if (frames == 0) {
       return;
     }
-    mix_to_mono(interleaved, frames, config_.channels, mono_);
+    // SD035 D1.1: both channels go through the dual stage in whole 10 ms frames, and only
+    // then the pipeline works with mono. A tail shorter than a frame waits for the next block.
+    const size_t channels = config_.channels == 0 ? 1 : config_.channels;
+    in_pending_.insert(in_pending_.end(), interleaved, interleaved + frames * channels);
+    const size_t usable = in_pending_.size() / channels / frame_ * frame_;
+    if (usable == 0) {
+      return;
+    }
+    mono_.assign(usable, 0);
+    const auto dual_start = std::chrono::steady_clock::now();
+    for (size_t off = 0; off < usable; off += frame_) {
+      dual_->process(in_pending_.data() + off * channels, mono_.data() + off);
+    }
+    timing_.dual_ms += elapsed_ms(dual_start);
+    in_pending_.erase(in_pending_.begin(),
+                      in_pending_.begin() + static_cast<std::ptrdiff_t>(usable * channels));
     pending_.insert(pending_.end(), mono_.begin(), mono_.end());
     const size_t full = frame_ == 0 ? pending_.size() : pending_.size() / frame_ * frame_;
     if (full == 0) {
@@ -191,6 +216,8 @@ class CommandPipeline {
     partial_.reset();
     decimator_.reset();
     denoiser_->reset();
+    dual_->reset();
+    in_pending_.clear();
     pending_.clear();
     asr_block_.clear();
     utterance_start_ = now;
@@ -258,8 +285,11 @@ class CommandPipeline {
   PartialTrigger partial_;
   std::unique_ptr<Denoiser> denoiser_;
   std::string denoise_error_;
+  std::unique_ptr<DualChannel> dual_;
+  std::string dual_error_;
   size_t frame_{480};
 
+  std::vector<int16_t> in_pending_;
   std::vector<int16_t> mono_;
   std::vector<int16_t> pending_;
   std::vector<int16_t> asr_block_;

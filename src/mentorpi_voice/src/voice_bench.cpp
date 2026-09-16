@@ -51,6 +51,11 @@ constexpr const char* kUsage =
   --max-utterance-ms <list>   default 5000, 0 disables
   --min-confidence <list>     default 0.6
   --speex-db <list>           default -30, varied only for speexdsp
+  --dual <list>               none,nlms,coherence (default none): stage over both channels
+  --nlms-taps <list>          default 256, varied only for nlms
+  --nlms-mu <list>            default 0.1, varied only for nlms
+  --coherence-fft <list>      default 512, varied only for coherence
+  --coherence-floor-db <list> default -18, varied only for coherence
   --jobs <n>                  parallel runs (default 1); ms_per_s is thread CPU time
   --events                    print every command: EVENT file config audio_time_ms via command text
   --trace                     print what the recognizer returns:
@@ -74,6 +79,11 @@ struct Options {
   std::vector<long> max_utterance_ms{5000};
   std::vector<double> min_confidence{0.6};
   std::vector<double> speex_db{-30.0};
+  std::vector<std::string> dual{"none"};
+  std::vector<long> nlms_taps{256};
+  std::vector<double> nlms_mu{0.1};
+  std::vector<long> coherence_fft{512};
+  std::vector<double> coherence_floor_db{-18.0};
   long jobs{1};
   bool events{false};
   bool trace{false};
@@ -273,6 +283,21 @@ Options parse_args(int argc, char** argv) {
       opts.min_confidence = double_list(value(), arg);
     } else if (arg == "--speex-db") {
       opts.speex_db = double_list(value(), arg);
+    } else if (arg == "--dual") {
+      opts.dual = split_list(value(), arg);
+      for (const auto& kind : opts.dual) {
+        if (kind != "none" && kind != "nlms" && kind != "coherence") {
+          fail_usage("unknown dual '" + kind + "'");
+        }
+      }
+    } else if (arg == "--nlms-taps") {
+      opts.nlms_taps = long_list(value(), arg, 16, 2048);
+    } else if (arg == "--nlms-mu") {
+      opts.nlms_mu = double_list(value(), arg);
+    } else if (arg == "--coherence-fft") {
+      opts.coherence_fft = long_list(value(), arg, 128, 4096);
+    } else if (arg == "--coherence-floor-db") {
+      opts.coherence_floor_db = double_list(value(), arg);
     } else if (arg == "--jobs") {
       opts.jobs = to_long(value(), arg);
       if (opts.jobs < 1) {
@@ -311,36 +336,68 @@ std::string default_model_dir() {
 
 std::vector<BenchConfig> make_configs(const Options& opts) {
   std::vector<BenchConfig> out;
-  for (const auto& denoise : opts.denoise) {
-    for (const long partial : opts.partial_trigger) {
-      for (const long stable : opts.partial_stable_ms) {
-        for (const long utterance : opts.max_utterance_ms) {
-          for (const double conf : opts.min_confidence) {
-            const std::vector<double> speex =
-                denoise == "speexdsp" ? opts.speex_db : std::vector<double>{opts.speex_db.front()};
-            for (const double db : speex) {
-              BenchConfig config;
-              PipelineConfig& p = config.pipeline;
-              p.asr_rate = 16000;
-              p.denoise = denoise;
-              p.denoise_options.speex_noise_suppress_db = db;
-              p.partial_trigger = partial != 0;
-              p.partial_stable = std::chrono::milliseconds(stable);
-              p.max_utterance = std::chrono::milliseconds(utterance);
-              p.phrases = kPhrases;
-              p.commands = kCommands;
-              p.min_confidence = conf;
-              std::ostringstream name;
-              name << denoise << ";p=" << partial << ";s=" << stable << ";u=" << utterance
-                   << ";c=" << std::fixed << std::setprecision(2) << conf;
-              if (denoise == "speexdsp") {
-                name << ";x=" << std::setprecision(0) << db;
+  for (const auto& dual : opts.dual) {
+    // Method parameters are swept only for the method they belong to.
+    const std::vector<long> taps =
+        dual == "nlms" ? opts.nlms_taps : std::vector<long>{opts.nlms_taps.front()};
+    const std::vector<double> mus =
+        dual == "nlms" ? opts.nlms_mu : std::vector<double>{opts.nlms_mu.front()};
+    const std::vector<long> ffts =
+        dual == "coherence" ? opts.coherence_fft : std::vector<long>{opts.coherence_fft.front()};
+    const std::vector<double> floors = dual == "coherence"
+                                           ? opts.coherence_floor_db
+                                           : std::vector<double>{opts.coherence_floor_db.front()};
+    for (const long tap : taps) {
+      for (const double mu : mus) {
+        for (const long fft : ffts) {
+          for (const double floor_db : floors) {
+            for (const auto& denoise : opts.denoise) {
+              for (const long partial : opts.partial_trigger) {
+                for (const long stable : opts.partial_stable_ms) {
+                  for (const long utterance : opts.max_utterance_ms) {
+                    for (const double conf : opts.min_confidence) {
+                      const std::vector<double> speex =
+                          denoise == "speexdsp" ? opts.speex_db
+                                                : std::vector<double>{opts.speex_db.front()};
+                      for (const double db : speex) {
+                        BenchConfig config;
+                        PipelineConfig& p = config.pipeline;
+                        p.asr_rate = 16000;
+                        p.denoise = denoise;
+                        p.denoise_options.speex_noise_suppress_db = db;
+                        p.partial_trigger = partial != 0;
+                        p.partial_stable = std::chrono::milliseconds(stable);
+                        p.max_utterance = std::chrono::milliseconds(utterance);
+                        p.phrases = kPhrases;
+                        p.commands = kCommands;
+                        p.min_confidence = conf;
+                        p.dual = dual;
+                        p.dual_options.nlms_taps = static_cast<size_t>(tap);
+                        p.dual_options.nlms_mu = mu;
+                        p.dual_options.coherence_fft = static_cast<size_t>(fft);
+                        p.dual_options.coherence_floor_db = floor_db;
+                        std::ostringstream name;
+                        name << denoise << ";p=" << partial << ";s=" << stable << ";u=" << utterance
+                             << ";c=" << std::fixed << std::setprecision(2) << conf;
+                        name << ";d=" << dual;
+                        if (dual == "nlms") {
+                          name << ";t=" << tap << ";mu=" << std::setprecision(2) << mu;
+                        } else if (dual == "coherence") {
+                          name << ";n=" << fft << ";fl=" << std::setprecision(0) << floor_db;
+                        }
+                        if (denoise == "speexdsp") {
+                          name << ";x=" << std::setprecision(0) << db;
+                        }
+                        if (opts.free_grammar) {
+                          name << ";free";
+                        }
+                        config.name = name.str();
+                        out.push_back(std::move(config));
+                      }
+                    }
+                  }
+                }
               }
-              if (opts.free_grammar) {
-                name << ";free";
-              }
-              config.name = name.str();
-              out.push_back(std::move(config));
             }
           }
         }
@@ -388,6 +445,10 @@ RunResult run_one(VoskModel* model, const LabelRow& row, const PcmClip& clip,
     CommandPipeline pipeline(config, std::move(engine));
     if (!pipeline.denoise_error().empty()) {
       result.error = "denoise: " + pipeline.denoise_error();
+      return result;
+    }
+    if (!pipeline.dual_error().empty()) {
+      result.error = "dual: " + pipeline.dual_error();
       return result;
     }
 

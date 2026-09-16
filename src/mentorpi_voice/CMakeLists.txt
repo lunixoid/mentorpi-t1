@@ -130,6 +130,14 @@ if(BUILD_TESTING)
   target_link_libraries(test_denoiser mentorpi_voice_denoise)
   add_test(NAME test_denoiser COMMAND test_denoiser)
 
+  add_executable(test_fft test/test_fft.cpp)
+  target_include_directories(test_fft PRIVATE include)
+  add_test(NAME test_fft COMMAND test_fft)
+
+  add_executable(test_dual_channel test/test_dual_channel.cpp)
+  target_include_directories(test_dual_channel PRIVATE include)
+  add_test(NAME test_dual_channel COMMAND test_dual_channel)
+
   add_executable(test_utterance test/test_utterance.cpp)
   target_include_directories(test_utterance PRIVATE include)
   add_test(NAME test_utterance COMMAND test_utterance)
