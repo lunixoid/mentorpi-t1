@@ -160,7 +160,7 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 | `src/mentorpi_bringup` | `stage1.launch.py` — запуск всего графа и слоёв датчиков |
 | `src/mentorpi_control` | режим (`control_state`), пульт (`linux_joy`, `pad_teleop`), выбор источника скорости (`control_mux`) |
 | `src/mentorpi_platform` | `platform_adapter` — мост на вендорское шасси |
-| `src/motion_control` | закон слежения за человеком → `/pnc/desired_twist` |
+| `src/motion_control` | закон слежения за человеком и объезд по виртуальному бамперу → `/pnc/desired_twist`; охрана `obstacle_guard` → `/control/motion_restriction` |
 | `src/mission_control` | статус слежения (`FOLLOWING` / `HOLD` / `INACTIVE`), скорость не считает |
 | `src/mentorpi_perception` | детекции + облако точек → положение ближайшего человека |
 | `src/mentorpi_person_detect` | распознавание человека на роботе (YOLO11n, включено по умолчанию) |
@@ -168,7 +168,6 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 | `src/mentorpi_description` | модель робота (URDF/xacro) |
 | `src/mentorpi_calibration` | файл калибровки и утилита `calib` |
 | `src/mentorpi_msgs` | типы сообщений и сервис смены режима |
-| `src/mentorpi_stubs` | заглушка `/control/motion_restriction` вместо будущей защиты от столкновений |
 | `src/hiwonder_controller`, `src/ros_robot_controller` | вендорские драйверы шасси: кинематика гусениц, одометрия, обмен по UART |
 | `host/t1ctl` | CLI оператора (C++17, без ROS) |
 | `host/systemd`, `host/sudoers.d`, `host/sysctl.d` | автозапуск и настройки хоста Pi |
@@ -186,7 +185,8 @@ manual: pad_teleop     → /control/manual_cmd_vel  ┘      │
 | `/hiwonder_controller/cmd_vel` | `geometry_msgs/Twist` | `platform_adapter` |
 | `/pnc/follow_person/status` | `mentorpi_msgs/FollowPersonStatus` | `mission_control` |
 | `/perception/nearest_person` | `mentorpi_msgs/NearestPerson` | `mentorpi_perception` |
-| `/control/motion_restriction` | `mentorpi_msgs/MotionRestriction` | `stub_graph`, всегда `stop_request: false` |
+| `/control/motion_restriction` | `mentorpi_msgs/MotionRestriction` | `obstacle_guard` (стоп по предмету, нет цели, нет команды; `reason`) |
+| `/pnc/obstacle_avoidance/status` | `mentorpi_msgs/ObstacleAvoidanceStatus` | `motion_control` (свободно / объезд / стоп / нет скана) |
 | `/scan`, `/aurora/points2`, `/imu`, `/odom_raw` | данные датчиков | драйверы лидара, камеры, IMU, шасси |
 
 Смена режима — сервис `/control/set_mode`; `t1ctl mode` дёргает именно его.

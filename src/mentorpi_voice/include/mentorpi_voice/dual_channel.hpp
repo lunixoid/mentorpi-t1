@@ -87,8 +87,7 @@ class NlmsDual : public DualChannel {
       const float reference = interleaved[2 * i + 1];
 
       const float oldest = history_[pos_];
-      energy_ += static_cast<double>(reference) * reference -
-                 static_cast<double>(oldest) * oldest;
+      energy_ += static_cast<double>(reference) * reference - static_cast<double>(oldest) * oldest;
       if (energy_ < 0.0) {
         energy_ = 0.0;
       }

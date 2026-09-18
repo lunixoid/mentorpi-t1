@@ -160,12 +160,11 @@ void test_coherence_keeps_common_tone() {
   Lcg left{11};
   Lcg right{22};
   for (size_t i = 0; i < frames; ++i) {
-    const double tone =
-        tone_amp * std::sin(2.0 * kPi * tone_hz * static_cast<double>(i) / kRate);
-    interleaved[2 * i] =
-        static_cast<int16_t>(std::lround(std::clamp(tone + left.next() * noise_amp, -32768.0, 32767.0)));
-    interleaved[2 * i + 1] =
-        static_cast<int16_t>(std::lround(std::clamp(tone + right.next() * noise_amp, -32768.0, 32767.0)));
+    const double tone = tone_amp * std::sin(2.0 * kPi * tone_hz * static_cast<double>(i) / kRate);
+    interleaved[2 * i] = static_cast<int16_t>(
+        std::lround(std::clamp(tone + left.next() * noise_amp, -32768.0, 32767.0)));
+    interleaved[2 * i + 1] = static_cast<int16_t>(
+        std::lround(std::clamp(tone + right.next() * noise_amp, -32768.0, 32767.0)));
   }
   const auto out = run(*stage, interleaved);
 

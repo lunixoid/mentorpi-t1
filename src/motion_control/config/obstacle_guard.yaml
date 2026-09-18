@@ -1,0 +1,14 @@
+# SD036 I5: obstacle_guard parameters. Footprint and filters live in footprint.yaml.
+/**:
+  ros__parameters:
+    rate_hz: 20.0
+    nearest_timeout_ms: 1000  # same gate as motion_control
+    persons_timeout_ms: 1000
+    scan_timeout_ms: 300
+    command_timeout_ms: 300  # /pnc/desired_twist at 20 Hz; older -> stop, reason no_command
+    # Inner stop zone, narrower than the bumper (SD036 D6.2): keep stop_margin < motion_control
+    # margin_min and stop_horizon_s <= motion_control horizon_s. Starting values, not an SLA.
+    stop_margin: 0.02
+    stop_horizon_s: 0.5
+    rollout_dt: 0.05
+    hold_ms: 300

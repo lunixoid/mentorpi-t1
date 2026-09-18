@@ -30,9 +30,8 @@ void test_round_trip() {
   uint32_t state = 12345;
   for (size_t i = 0; i < n; ++i) {
     state = state * 1664525u + 1013904223u;
-    data[i] = std::complex<float>(static_cast<float>(static_cast<int32_t>(state >> 16) - 32768) /
-                                      32768.0f,
-                                  0.0f);
+    data[i] = std::complex<float>(
+        static_cast<float>(static_cast<int32_t>(state >> 16) - 32768) / 32768.0f, 0.0f);
   }
   const std::vector<std::complex<float>> original = data;
   fft_forward(data);
@@ -52,8 +51,8 @@ void test_sine_peak() {
   const size_t bin = 20;
   std::vector<std::complex<float>> data(n);
   for (size_t i = 0; i < n; ++i) {
-    const double phase = 2.0 * kPi * static_cast<double>(bin) * static_cast<double>(i) /
-                         static_cast<double>(n);
+    const double phase =
+        2.0 * kPi * static_cast<double>(bin) * static_cast<double>(i) / static_cast<double>(n);
     data[i] = std::complex<float>(static_cast<float>(std::cos(phase)), 0.0f);
   }
   fft_forward(data);

@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ChassisStatus.msg"
   "msg/ControlStatus.msg"
   "msg/NamedCommand.msg"
+  "msg/ObstacleAvoidanceStatus.msg"
   "srv/SetControlMode.srv"
   DEPENDENCIES std_msgs
 )

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Stage 1 bringup: stub graph, chassis SIT (SD003), lidar (SD006), IMU (SD010 T1),
+"""Stage 1 bringup: chassis SIT (SD003), lidar (SD006), IMU (SD010 T1),
 camera (SD008 T1), control mux (SD011), person perception (SD013),
-FollowPerson status (SD019), motion control (SD020), voice control (SD031 F21).
+FollowPerson status (SD019), motion control (SD020), obstacle avoidance and guard
+(SD036 F12-F14), voice control (SD031 F21).
 """
 
 import os
@@ -13,12 +14,10 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    rate_hz = LaunchConfiguration("rate_hz")
     enable_lidar = LaunchConfiguration("enable_lidar")
     enable_robot_model = LaunchConfiguration("enable_robot_model")
     enable_depth_camera = LaunchConfiguration("enable_depth_camera")
@@ -45,23 +44,9 @@ def generate_launch_description():
     #   F09 follow (track)
     #   F10 follow (behavior) — mission_control (SD019)
     #   F11 motion — motion_control (SD020, SD025)
-    #   F12 obstacle_guard
-    #   F13 safety
-    #   F14 invariant
+    #   F12 obstacle avoidance — virtual bumper inside motion_control (SD036)
+    #   F13 safety, F14 invariant — obstacle_guard publishes /control/motion_restriction (SD036)
     #   F21 voice — command_dispatcher + voice_command (SD031 overlay, not vendor)
-    stub_graph = Node(
-        package="mentorpi_stubs",
-        executable="stub_graph",
-        name="stub_graph",
-        output="screen",
-        emulate_tty=True,
-        parameters=[
-            {
-                "rate_hz": ParameterValue(rate_hz, value_type=float),
-            }
-        ],
-    )
-
     control_state = Node(
         package="mentorpi_control",
         executable="control_state",
@@ -322,6 +307,9 @@ def generate_launch_description():
         ],
     )
 
+    # SD036 I10: follow law + virtual bumper; footprint.yaml is shared with obstacle_guard.
+    motion_control_share = FindPackageShare("motion_control")
+    footprint_yaml = PathJoinSubstitution([motion_control_share, "config", "footprint.yaml"])
     motion_control = Node(
         package="motion_control",
         executable="motion_control",
@@ -329,23 +317,21 @@ def generate_launch_description():
         output="screen",
         emulate_tty=True,
         parameters=[
-            {
-                "standoff": 0.5,
-                "max_linear": 0.37,
-                "max_angular": 2.0,
-                "kp_lin": 0.8,
-                "kp_ang": 1.5,
-                "dist_deadband": 0.05,
-                "min_breakaway_linear": 0.10,  # SD025: lifts the command from standstill only
-                "accel_linear": 0.30,  # SD025 T5 starting point, not a sweep
-                "decel_linear": 0.60,  # SD025 T5 starting point: brakes harder than it accelerates
-                # SD025 T5, bag f11_sd025_20260906_164725; max_linear=0.37 stays platform ceiling
-                "max_linear_follow": 0.25,
-                "ang_deadband": 0.05,
-                "track_half_sum": 0.1407,
-                "nearest_timeout_ms": 1000,  # onboard infer stalls ~0.5–0.7 s (SD027)
-                "rate_hz": 20.0,
-            }
+            footprint_yaml,
+            PathJoinSubstitution([motion_control_share, "config", "motion_control.yaml"]),
+        ],
+    )
+
+    # SD036 D6: F13/F14, the only publisher of /control/motion_restriction (was stub_graph).
+    obstacle_guard = Node(
+        package="motion_control",
+        executable="obstacle_guard",
+        name="obstacle_guard",
+        output="screen",
+        emulate_tty=True,
+        parameters=[
+            footprint_yaml,
+            PathJoinSubstitution([motion_control_share, "config", "obstacle_guard.yaml"]),
         ],
     )
 
@@ -398,11 +384,6 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
-                "rate_hz",
-                default_value="10.0",
-                description="stub_graph publish rate in hertz",
-            ),
-            DeclareLaunchArgument(
                 "enable_lidar",
                 default_value="true",
                 description="start SD006 lidar layer (vendor hiwonder_peripherals)",
@@ -431,7 +412,6 @@ def generate_launch_description():
             SetEnvironmentVariable("MACHINE_TYPE", "MentorPi_Tank"),
             SetEnvironmentVariable("DEPTH_CAMERA_TYPE", "aurora"),
             fastdds_profile_action,
-            stub_graph,
             control_state,
             pad_teleop,
             linux_joy,
@@ -449,5 +429,6 @@ def generate_launch_description():
             command_dispatcher,
             voice_command,
             motion_control,
+            obstacle_guard,
         ]
     )

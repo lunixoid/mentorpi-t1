@@ -2,8 +2,8 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mentorpi_bringup</name>
-  <version>0.10.0</version>
-  <description>Stage 1 launch: stub graph, chassis SIT, control mux (F06), lidar layer (F03), IMU layer (F04), camera layer (F05), person perception (F08), FollowPerson status (F10), motion control (F11); no Hiwonder apps.</description>
+  <version>0.11.0</version>
+  <description>Stage 1 launch: chassis SIT, control mux (F06), lidar layer (F03), IMU layer (F04), camera layer (F05), person perception (F08), FollowPerson status (F10), motion control and obstacle avoidance (F11, F12), obstacle guard (F13, F14); no Hiwonder apps.</description>
   <maintainer email="lunix0x@gmail.com">Roman Kalashnikov</maintainer>
   <license>Apache-2.0</license>
 
@@ -13,7 +13,6 @@
   <exec_depend>mentorpi_control</exec_depend>
   <exec_depend>mentorpi_localization</exec_depend>
   <exec_depend>mentorpi_platform</exec_depend>
-  <exec_depend>mentorpi_stubs</exec_depend>
   <exec_depend>mentorpi_perception</exec_depend>
   <exec_depend>mentorpi_person_detect</exec_depend>
   <exec_depend>mission_control</exec_depend>

@@ -70,8 +70,8 @@ inline std::vector<float> hann_window(size_t n) {
   constexpr double kPi = 3.14159265358979323846;
   std::vector<float> window(n);
   for (size_t i = 0; i < n; ++i) {
-    window[i] = static_cast<float>(0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) /
-                                                        static_cast<double>(n)));
+    window[i] = static_cast<float>(
+        0.5 - 0.5 * std::cos(2.0 * kPi * static_cast<double>(i) / static_cast<double>(n)));
   }
   return window;
 }

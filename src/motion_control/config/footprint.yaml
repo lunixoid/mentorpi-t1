@@ -1,0 +1,15 @@
+# SD036 I4.3: shared by motion_control and obstacle_guard, so the planner and the guard measure
+# clearance to the same outline. Each node declares only its keys; the others are ignored.
+/**:
+  ros__parameters:
+    # Outline in base_footprint. Starting values: envelope of the URDF meshes (SD036 As-built),
+    # to be checked with a tape measure on the stand (T7). Not an SLA.
+    footprint_front: 0.175
+    footprint_back: 0.166
+    footprint_half_width: 0.123
+    # Lidar hits inside outline + pad are the robot shell. Must stay < margin_min and small.
+    self_filter_pad: 0.02
+    # Points within this radius of any person from /perception/persons are not obstacles.
+    # 0.35 -> 0.25 after stand run sd036_bed_20260918_133606: 0.35 hid a bed edge next to the
+    # person; walking legs sit within 0.22 m of the person centre, 0.20 would leave some.
+    person_exclusion_radius: 0.25

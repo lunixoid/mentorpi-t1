@@ -1,0 +1,46 @@
+# SD036 I4.1, I4.2: motion_control parameters. Footprint and filters live in footprint.yaml.
+/**:
+  ros__parameters:
+    # SD025 follow law, moved from stage1.launch.py unchanged.
+    standoff: 0.5
+    max_linear: 0.37
+    max_angular: 2.0
+    kp_lin: 0.8
+    kp_ang: 1.5
+    dist_deadband: 0.05
+    min_breakaway_linear: 0.10  # SD025: lifts the command from standstill only
+    accel_linear: 0.30  # SD025 T5 starting point, not a sweep
+    decel_linear: 0.60  # SD025 T5 starting point: brakes harder than it accelerates
+    # SD025 T5, bag f11_sd025_20260906_164725; max_linear=0.37 stays platform ceiling
+    max_linear_follow: 0.25
+    ang_deadband: 0.05
+    track_half_sum: 0.1407
+    nearest_timeout_ms: 1000  # onboard infer stalls ~0.5-0.7 s (SD027)
+    rate_hz: 20.0
+
+    # SD036 virtual bumper and avoidance. Starting values, not an SLA: tuned on the stand (T7).
+    enable_avoidance: true  # false: exact SD025 behaviour, status DISABLED
+    scan_timeout_ms: 300  # LD19 ~10 Hz; older scan -> NO_SCAN, follow without guard
+    persons_timeout_ms: 1000
+    # margin(|v|) = margin_min + (margin_max - margin_min) * clamp(|v| / margin_speed_ref, 0, 1)
+    margin_min: 0.05  # keep > obstacle_guard stop_margin (SD036 D6.2)
+    margin_max: 0.12  # 0.20 -> 0.12 after sd036_bed_20260918_151838: kept 0.22-0.25 m off a bed
+    margin_speed_ref: 0.25
+    influence_range: 0.25  # R of 0.5*kp_repulse*(1/d - 1/R)^2; 0.40 -> 0.25, slowed arcs near a bed
+    horizon_s: 1.5  # keep >= obstacle_guard stop_horizon_s (SD036 D6.2)
+    rollout_dt: 0.1
+    arc_linear_samples: 4
+    arc_angular_samples: 9  # odd
+    max_angular_avoid: 1.0
+    rotate_angular: 0.8  # fast track 0.11 m/s, above breakaway
+    reverse_linear: 0.10
+    reverse_angular: 0.5
+    reverse_min_s: 0.8
+    free_hysteresis: 0.03
+    camera_half_fov: 0.645  # Aurora 930, 74 deg (SD012)
+    fov_margin: 0.10
+    w_goal: 1.0
+    w_heading: 0.3
+    w_fov: 5.0
+    kp_repulse: 0.01
+    w_smooth: 0.2
